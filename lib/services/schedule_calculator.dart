@@ -1,0 +1,128 @@
+import '../core/constants.dart';
+
+class ScheduledReminder {
+  const ScheduledReminder({
+    required this.time,
+    required this.portionMl,
+    required this.cumulativeMl,
+    this.isNightWake = false,
+  });
+
+  final DateTime time;
+  final int portionMl;
+  final int cumulativeMl;
+  final bool isNightWake;
+}
+
+class ScheduleCalculator {
+  /// Domyślny harmonogram jak w wersji iOS (co ~50 min, 9:00–21:00).
+  static List<ScheduledReminder> defaultDailySchedule({
+    required DateTime day,
+    int portionMl = AppConstants.portionMl,
+  }) {
+    const times = [
+      (9, 0),
+      (9, 50),
+      (10, 40),
+      (11, 30),
+      (12, 20),
+      (13, 10),
+      (14, 0),
+      (14, 50),
+      (15, 40),
+      (16, 30),
+      (17, 20),
+      (18, 10),
+      (19, 0),
+      (19, 50),
+      (20, 40),
+      (21, 0),
+    ];
+
+    return [
+      for (var i = 0; i < times.length; i++)
+        ScheduledReminder(
+          time: DateTime(
+            day.year,
+            day.month,
+            day.day,
+            times[i].$1,
+            times[i].$2,
+          ),
+          portionMl: portionMl,
+          cumulativeMl: portionMl * (i + 1),
+        ),
+    ];
+  }
+
+  /// Po kliknięciu powiadomienia nocnego — równe odstępy od teraz do końca dnia.
+  static List<ScheduledReminder> redistributeFromWakeUp({
+    required DateTime now,
+    required int currentProgressMl,
+    required int dailyGoalMl,
+    int portionMl = AppConstants.portionMl,
+    int endHour = AppConstants.dayEndHour,
+    int endMinute = AppConstants.dayEndMinute,
+  }) {
+    final endOfDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      endHour,
+      endMinute,
+    );
+
+    if (!now.isBefore(endOfDay)) return [];
+
+    final remainingMl = (dailyGoalMl - currentProgressMl).clamp(0, dailyGoalMl);
+    if (remainingMl <= 0) return [];
+
+    final portions = (remainingMl / portionMl).ceil();
+    final totalMinutes = endOfDay.difference(now).inMinutes;
+
+    if (portions <= 0 || totalMinutes <= 0) return [];
+
+    final intervalMinutes = totalMinutes / portions;
+    final reminders = <ScheduledReminder>[];
+
+    for (var i = 0; i < portions; i++) {
+      final time = now.add(
+        Duration(minutes: (intervalMinutes * (i + 1)).round()),
+      );
+      if (time.isAfter(endOfDay)) break;
+
+      reminders.add(
+        ScheduledReminder(
+          time: time,
+          portionMl: portionMl,
+          cumulativeMl: currentProgressMl + portionMl * (i + 1),
+          isNightWake: i == 0,
+        ),
+      );
+    }
+
+    return reminders;
+  }
+
+  /// Ile wody powinieneś mieć wypite do aktualnej godziny (od 9:00 co 50 min).
+  static int recommendedMlAt(DateTime now, {int portionMl = 250}) {
+    const startHour = AppConstants.dayStartHour;
+    const startMinute = AppConstants.dayStartMinute;
+
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      startHour,
+      startMinute,
+    );
+
+    if (now.isBefore(start)) return 0;
+
+    final totalMinutes = now.difference(start).inMinutes;
+    if (totalMinutes < 0) return 0;
+
+    final intervals = (totalMinutes / AppConstants.defaultIntervalMinutes).ceil();
+    return portionMl * intervals;
+  }
+}
