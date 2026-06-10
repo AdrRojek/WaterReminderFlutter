@@ -99,6 +99,13 @@ class WaterRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> returnToBoiler(int amountMl) async {
+    _boiler.amountMl = (_boiler.amountMl + amountMl)
+        .clamp(0, AppConstants.boilerCapacityMl);
+    await _storage.saveBoiler(_boiler);
+    notifyListeners();
+  }
+
   Future<void> resetBoiler() async {
     await refillBoiler();
   }

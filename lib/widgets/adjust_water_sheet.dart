@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants.dart';
-import '../data/storage_service.dart';
 import '../data/water_repository.dart';
 
 Future<void> showAdjustWaterSheet(
@@ -90,10 +88,7 @@ Future<void> showAdjustWaterSheet(
                       child: OutlinedButton(
                         onPressed: () async {
                           await repo.subtractWater(selectedAmount);
-                          final boiler = repo.boiler;
-                          boiler.amountMl = (boiler.amountMl + selectedAmount)
-                              .clamp(0, AppConstants.boilerCapacityMl);
-                          await StorageService.instance.saveBoiler(boiler);
+                          await repo.returnToBoiler(selectedAmount);
                           if (context.mounted) Navigator.pop(context);
                         },
                         child: const Text('+ bojler'),
