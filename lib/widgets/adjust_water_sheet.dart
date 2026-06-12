@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme.dart';
 import '../data/water_repository.dart';
+import 'amount_picker.dart';
 
 Future<void> showAdjustWaterSheet(
   BuildContext context,
   WaterRepository repo,
 ) async {
   var selectedAmount = 50;
+  final values = List.generate(21, (index) => index * 50);
 
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).cardColor,
+    backgroundColor: AppTheme.card,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -22,7 +25,7 @@ Future<void> showAdjustWaterSheet(
             padding: EdgeInsets.only(
               left: 20,
               right: 20,
-              top: 20,
+              top: 12,
               bottom: MediaQuery.of(context).viewInsets.bottom + 24,
             ),
             child: Column(
@@ -42,34 +45,18 @@ Future<void> showAdjustWaterSheet(
                 const SizedBox(height: 16),
                 Text(
                   'Ile chcesz odjąć?',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(
-                  height: 140,
-                  child: ListWheelScrollView.useDelegate(
-                    itemExtent: 40,
-                    onSelectedItemChanged: (index) {
-                      setState(() => selectedAmount = index * 50);
-                    },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: 21,
-                      builder: (context, index) {
-                        final value = index * 50;
-                        return Center(
-                          child: Text(
-                            '-$value ml',
-                            style: TextStyle(
-                              fontSize: value == selectedAmount ? 22 : 16,
-                              fontWeight: value == selectedAmount
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                const SizedBox(height: 12),
+                AmountPicker(
+                  value: selectedAmount,
+                  values: values,
+                  quickValues: const [50, 250, 500, 1000],
+                  labelBuilder: (v) => '-$v ml',
+                  onChanged: (v) => setState(() => selectedAmount = v),
                 ),
                 const SizedBox(height: 12),
                 Row(

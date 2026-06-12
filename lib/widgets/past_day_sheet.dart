@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../core/theme.dart';
 import '../data/water_repository.dart';
+import 'amount_picker.dart';
 
 Future<void> showPastDaySheet(
   BuildContext context,
@@ -14,7 +16,7 @@ Future<void> showPastDaySheet(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).cardColor,
+    backgroundColor: AppTheme.card,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -30,19 +32,32 @@ Future<void> showPastDaySheet(
             padding: EdgeInsets.only(
               left: 20,
               right: 20,
-              top: 20,
+              top: 12,
               bottom: MediaQuery.of(context).viewInsets.bottom + 24,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Dodaj wodę do poprzedniego dnia',
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
+                Text(
+                  'Dodaj wodę do poprzedniego dnia',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
                 CalendarDatePicker(
                   initialDate: selectedDate,
                   firstDate: DateTime(2020),
@@ -50,28 +65,20 @@ Future<void> showPastDaySheet(
                   onDateChanged: (date) {
                     setState(() {
                       selectedDate = date;
-                      if (!isYesterday) useBoiler = false;
+                      final stillYesterday = date.year == yesterday.year &&
+                          date.month == yesterday.month &&
+                          date.day == yesterday.day;
+                      if (!stillYesterday) useBoiler = false;
                     });
                   },
                 ),
-                SizedBox(
-                  height: 120,
-                  child: ListWheelScrollView.useDelegate(
-                    itemExtent: 36,
-                    onSelectedItemChanged: (index) {
-                      setState(() => amount = (index + 1) * 50);
-                    },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: 20,
-                      builder: (context, index) {
-                        final value = (index + 1) * 50;
-                        return Center(child: Text('$value ml'));
-                      },
-                    ),
-                  ),
+                AmountPicker(
+                  value: amount,
+                  onChanged: (v) => setState(() => amount = v),
                 ),
                 if (isYesterday) ...[
                   SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
                     title: const Text('Użyj bojlera (wczoraj)'),
                     value: useBoiler,
                     onChanged: (v) => setState(() => useBoiler = v),
@@ -87,7 +94,7 @@ Future<void> showPastDaySheet(
                     }
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text('Dodaj'),
+                  child: Text('Dodaj $amount ml'),
                 ),
               ],
             ),
