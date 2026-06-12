@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../core/date_format.dart';
 import '../core/theme.dart';
 import '../models/water_day_entry.dart';
 
@@ -16,70 +16,129 @@ class HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: Text('Brak historii')),
+    final today = DateTime.now();
+    final visible = entries.take(14).toList();
+
+    if (visible.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            Icon(
+              Icons.history_rounded,
+              size: 40,
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Brak historii',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: entries.length.clamp(0, 14),
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        final date = DateTime.parse(entry.dateKey);
-        final color = AppTheme.progressColor(
-          entry.progressMl.toDouble(),
-          dailyGoal,
-        );
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(14),
+    return Column(
+      children: [
+        for (var i = 0; i < visible.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _HistoryTile(
+            entry: visible[i],
+            dailyGoal: dailyGoal,
+            today: today,
           ),
-          child: Row(
+        ],
+      ],
+    );
+  }
+}
+
+class _HistoryTile extends StatelessWidget {
+  const _HistoryTile({
+    required this.entry,
+    required this.dailyGoal,
+    required this.today,
+  });
+
+  final WaterDayEntry entry;
+  final int dailyGoal;
+  final DateTime today;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateTime.parse(entry.dateKey);
+    final fraction = (entry.progressMl / dailyGoal).clamp(0.0, 1.0);
+    final done = entry.progressMl >= dailyGoal;
+    final color = AppTheme.progressColor(entry.progressMl.toDouble(), dailyGoal);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Expanded(
                 child: Text(
-                  DateFormat('d MMM yyyy', 'pl_PL').format(date),
-                  style: const TextStyle(color: Colors.white70),
+                  formatRelativeDay(date, today),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
               ),
               if (entry.kreatyna)
                 Container(
                   margin: const EdgeInsets.only(right: 8),
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
                     'K',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Colors.black,
+                      fontSize: 11,
                     ),
                   ),
                 ),
+              if (done)
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: color,
+                ),
+              const SizedBox(width: 8),
               Text(
                 '${entry.progressMl} ml',
                 style: TextStyle(
                   color: color,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
               ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: fraction,
+              minHeight: 6,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

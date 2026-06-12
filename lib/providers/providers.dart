@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/storage_service.dart';
@@ -28,21 +29,31 @@ final waterRepositoryProvider = ChangeNotifierProvider<WaterRepository>((ref) {
   return repo;
 });
 
+/// Szybka inicjalizacja — tylko Hive i dane. Używa ref.read, żeby uniknąć
+/// nieskończonej pętli przy notifyListeners() z repozytorium.
 final initProvider = FutureProvider<void>((ref) async {
-  final repo = ref.watch(waterRepositoryProvider);
+  final repo = ref.read(waterRepositoryProvider);
   await repo.initialize();
-  await NotificationService.instance.requestPermissions();
-
-  final launchDetails = await NotificationService.instance.getLaunchDetails();
-  if (launchDetails?.didNotificationLaunchApp == true) {
-    final payload = launchDetails!.notificationResponse?.payload;
-    if (payload == NotificationService.nightPayload) {
-      await repo.handleNightWakeUp();
-    } else if (payload?.startsWith('water_') == true ||
-        launchDetails.notificationResponse?.actionId == 'DRINK_ACTION') {
-      await repo.addWater(repo.settings.portionMl);
-    }
-  }
-
-  await repo.scheduleDefaultNotifications();
 });
+
+Future<void> setupNotifications(WaterRepository repo) async {
+  try {
+    await NotificationService.instance.requestPermissions();
+
+    final launchDetails =
+        await NotificationService.instance.getLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp == true) {
+      final payload = launchDetails!.notificationResponse?.payload;
+      if (payload == NotificationService.nightPayload) {
+        await repo.handleNightWakeUp();
+      } else if (payload?.startsWith('water_') == true ||
+          launchDetails.notificationResponse?.actionId == 'DRINK_ACTION') {
+        await repo.addWater(repo.settings.portionMl);
+      }
+    }
+
+    await repo.scheduleDefaultNotifications();
+  } catch (e, st) {
+    debugPrint('Powiadomienia: błąd konfiguracji: $e\n$st');
+  }
+}

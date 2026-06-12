@@ -29,7 +29,11 @@ class NotificationService {
     if (_initialized) return;
 
     tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Europe/Warsaw'));
+    try {
+      tz.setLocalLocation(tz.getLocation('Europe/Warsaw'));
+    } catch (_) {
+      tz.setLocalLocation(tz.UTC);
+    }
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -110,7 +114,8 @@ class NotificationService {
       final reminder = reminders[i];
       if (reminder.time.isBefore(DateTime.now())) continue;
 
-      await _plugin.zonedSchedule(
+      try {
+        await _plugin.zonedSchedule(
         1000 + i,
         'Wypij szklankę wody',
         'Do wypicia: ${reminder.portionMl} ml | '
@@ -139,7 +144,10 @@ class NotificationService {
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: 'water_${reminder.portionMl}',
-      );
+        );
+      } catch (e) {
+        debugPrint('Nie udało się zaplanować powiadomienia #$i: $e');
+      }
     }
   }
 
@@ -154,7 +162,8 @@ class NotificationService {
 
     if (nightTime.isBefore(DateTime.now())) return;
 
-    await _plugin.zonedSchedule(
+    try {
+      await _plugin.zonedSchedule(
       42,
       'Obudziłeś się w nocy?',
       'Kliknij, aby przeliczyć harmonogram picia wody na resztę dnia',
@@ -176,7 +185,10 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: _nightPayload,
-    );
+      );
+    } catch (e) {
+      debugPrint('Nie udało się zaplanować powiadomienia nocnego: $e');
+    }
   }
 
   void _onNotificationResponse(NotificationResponse response) {

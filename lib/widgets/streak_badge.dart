@@ -7,27 +7,41 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hot = streak > 3;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.15),
+        gradient: LinearGradient(
+          colors: hot
+              ? [const Color(0xFFFF6D00), const Color(0xFFFF9100)]
+              : [
+                  Colors.white.withValues(alpha: 0.08),
+                  Colors.white.withValues(alpha: 0.04),
+                ],
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: hot
+              ? Colors.orange.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            streak > 3 ? Icons.local_fire_department : Icons.whatshot_outlined,
-            color: Colors.orangeAccent,
+            hot ? Icons.local_fire_department_rounded : Icons.whatshot_outlined,
+            color: hot ? Colors.white : Colors.orangeAccent,
             size: 20,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
-            '$streak dni',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.orangeAccent,
+            '$streak ${streak == 1 ? 'dzień' : 'dni'} z rzędu',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: hot ? Colors.white : Colors.orangeAccent,
             ),
           ),
         ],

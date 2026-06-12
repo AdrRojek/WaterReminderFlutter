@@ -25,17 +25,23 @@ class QuickActionButtons extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _ActionButton(
-                label: 'Wypito $portionMl ml',
-                color: Colors.green,
+              child: _ActionTile(
+                icon: Icons.water_drop_rounded,
+                label: '+$portionMl ml',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
+                ),
                 onTap: onAdd250,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _ActionButton(
-                label: 'Wypito ${portionMl * 2} ml',
-                color: Colors.orange,
+              child: _ActionTile(
+                icon: Icons.local_drink_rounded,
+                label: '+${portionMl * 2} ml',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF42A5F5), Color(0xFF1E88E5)],
+                ),
                 onTap: onAdd500,
               ),
             ),
@@ -43,67 +49,108 @@ class QuickActionButtons extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (boilerAmount >= portionMl)
-          _ActionButton(
+          _ActionTile(
+            icon: Icons.coffee_rounded,
             label: 'Bojler $portionMl ml',
-            color: Colors.blue,
-            subtitle: 'Stan bojlera: $boilerAmount ml',
+            subtitle: 'Pozostało $boilerAmount ml',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+            ),
             onTap: onBoiler250,
+            fullWidth: true,
           )
         else
-          _ActionButton(
+          _ActionTile(
+            icon: Icons.refresh_rounded,
             label: 'Uzupełnij bojler',
-            color: Colors.teal,
+            subtitle: 'Pusty — naciśnij, aby napełnić',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+            ),
             onTap: onRefillBoiler,
+            fullWidth: true,
           ),
       ],
     );
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
     required this.onTap,
     this.subtitle,
+    this.fullWidth = false,
   });
 
+  final IconData icon;
   final String label;
-  final Color color;
-  final VoidCallback onTap;
   final String? subtitle;
+  final LinearGradient gradient;
+  final VoidCallback onTap;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withValues(alpha: 0.85),
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          child: Column(
-            children: [
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.colors.first.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 11,
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: fullWidth ? 16 : 18,
+              horizontal: 16,
+            ),
+            child: Row(
+              mainAxisAlignment:
+                  fullWidth ? MainAxisAlignment.start : MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: fullWidth
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),

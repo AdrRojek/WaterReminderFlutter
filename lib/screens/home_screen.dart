@@ -1,47 +1,77 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
 import '../providers/providers.dart';
 import '../widgets/adjust_water_sheet.dart';
+import '../widgets/glass_card.dart';
 import '../widgets/history_list.dart';
 import '../widgets/past_day_sheet.dart';
 import '../widgets/progress_ring.dart';
 import '../widgets/quick_action_buttons.dart';
 import '../widgets/streak_badge.dart';
-import '../widgets/water_drop.dart';
 import 'settings_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _notificationsScheduled = false;
+
+  @override
+  Widget build(BuildContext context) {
     final init = ref.watch(initProvider);
 
     return init.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () => Scaffold(
+        body: Container(
+          decoration: AppTheme.backgroundDecoration,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       ),
       error: (e, _) => Scaffold(
-        body: Center(child: Text('Błąd: $e')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Błąd inicjalizacji: $e'),
+          ),
+        ),
       ),
       data: (_) {
+        if (!_notificationsScheduled) {
+          _notificationsScheduled = true;
+          final repo = ref.read(waterRepositoryProvider);
+          Future.microtask(() => setupNotifications(repo));
+        }
+
         final repo = ref.watch(waterRepositoryProvider);
         final progress = repo.todayProgress;
         final goal = repo.settings.dailyGoalMl;
         final recommended = repo.recommendedMlNow();
         final remaining = (goal - progress).clamp(0, goal);
+        final statusColor =
+            AppTheme.progressColor(progress.toDouble(), goal);
         final recommendedColor =
             AppTheme.recommendedColor(recommended, progress);
 
         return Scaffold(
+          extendBody: true,
           extendBodyBehindAppBar: true,
           appBar: AppBar(
-            title: const Text('Water Reminder'),
+            title: const Text(
+              'Water Reminder',
+              style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.3),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.settings_outlined),
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: 'Ustawienia',
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -53,72 +83,55 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).scaffoldBackgroundColor,
-                  const Color(0xFF102A43),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+            decoration: AppTheme.backgroundDecoration,
             child: SafeArea(
               child: RefreshIndicator(
+                color: AppTheme.primary,
                 onRefresh: () async {
-                  await repo.scheduleDefaultNotifications();
+                  await setupNotifications(ref.read(waterRepositoryProvider));
                 },
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
                   children: [
                     Center(child: StreakBadge(streak: repo.calculateStreak())),
                     const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        WaterDrop(progress: progress.toDouble(), goal: goal),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                progress >= goal
-                                    ? 'Cel osiągnięty!'
-                                    : 'Jeszcze $remaining ml',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      color: AppTheme.progressColor(
-                                        progress.toDouble(),
-                                        goal,
-                                      ),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Powinieneś mieć: $recommended ml',
-                                style: TextStyle(
-                                  color: recommendedColor,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
+                    GlassCard(
+                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                      child: Column(
+                        children: [
+                          Center(
+                            child: ProgressRing(
+                              progress: progress,
+                              goal: goal,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: ProgressRing(
-                        progress: progress,
-                        goal: goal,
+                          const SizedBox(height: 20),
+                          Text(
+                            progress >= goal
+                                ? 'Świetnie! Cel osiągnięty'
+                                : 'Zostało $remaining ml',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Rekomendacja: $recommended ml',
+                            style: TextStyle(
+                              color: recommendedColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
                     QuickActionButtons(
                       portionMl: repo.settings.portionMl,
                       boilerAmount: repo.boiler.amountMl,
@@ -130,48 +143,39 @@ class HomeScreen extends ConsumerWidget {
                       onRefillBoiler: repo.refillBoiler,
                     ),
                     const SizedBox(height: 28),
-                    Text(
-                      'Historia',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Text(
+                          'Historia',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'ostatnie dni',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     HistoryList(
                       entries: repo.entries,
                       dailyGoal: goal,
                     ),
-                    const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
           ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Row(
-              children: [
-                _BottomIconButton(
-                  icon: Icons.fitness_center,
-                  active: repo.isKreatynaToday,
-                  onTap: repo.toggleKreatyna,
-                  tooltip: 'Kreatyna',
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: () => showAdjustWaterSheet(context, repo),
-                  icon: const Icon(Icons.undo),
-                  label: const Text('Cofnij'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-                  ),
-                ),
-                const Spacer(),
-                _BottomIconButton(
-                  icon: Icons.calendar_month,
-                  onTap: () => showPastDaySheet(context, repo),
-                  tooltip: 'Poprzedni dzień',
-                ),
-              ],
-            ),
+          bottomNavigationBar: _BottomDock(
+            kreatynaActive: repo.isKreatynaToday,
+            onKreatyna: repo.toggleKreatyna,
+            onUndo: () => showAdjustWaterSheet(context, repo),
+            onCalendar: () => showPastDaySheet(context, repo),
           ),
         );
       },
@@ -179,8 +183,74 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _BottomIconButton extends StatelessWidget {
-  const _BottomIconButton({
+class _BottomDock extends StatelessWidget {
+  const _BottomDock({
+    required this.kreatynaActive,
+    required this.onKreatyna,
+    required this.onUndo,
+    required this.onCalendar,
+  });
+
+  final bool kreatynaActive;
+  final VoidCallback onKreatyna;
+  final VoidCallback onUndo;
+  final VoidCallback onCalendar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              children: [
+                _DockButton(
+                  icon: Icons.fitness_center_rounded,
+                  active: kreatynaActive,
+                  onTap: onKreatyna,
+                  tooltip: 'Kreatyna',
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: FilledButton.icon(
+                      onPressed: onUndo,
+                      icon: const Icon(Icons.undo_rounded, size: 18),
+                      label: const Text('Cofnij'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFFE57373).withValues(alpha: 0.9),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 48),
+                      ),
+                    ),
+                  ),
+                ),
+                _DockButton(
+                  icon: Icons.calendar_month_rounded,
+                  onTap: onCalendar,
+                  tooltip: 'Poprzedni dzień',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DockButton extends StatelessWidget {
+  const _DockButton({
     required this.icon,
     required this.onTap,
     required this.tooltip,
@@ -199,10 +269,12 @@ class _BottomIconButton extends StatelessWidget {
       onPressed: onTap,
       style: IconButton.styleFrom(
         backgroundColor: active
-            ? Colors.green.withValues(alpha: 0.8)
-            : Theme.of(context).cardColor,
+            ? const Color(0xFF43A047).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.08),
+        foregroundColor: Colors.white,
+        fixedSize: const Size(48, 48),
       ),
-      icon: Icon(icon),
+      icon: Icon(icon, size: 22),
     );
   }
 }
