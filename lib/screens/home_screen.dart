@@ -113,14 +113,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           extendBody: true,
           extendBodyBehindAppBar: true,
           appBar: AppBar(
-            title: Text(
-              l10n.appTitle,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-              ),
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/brand/logo.png',
+                    width: 28,
+                    height: 28,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.appTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.notifications_paused_rounded),
+                tooltip: l10n.snoozeNextSlot,
+                onPressed: () async {
+                  final ok = await repo.snoozeNextSlot();
+                  if (!context.mounted) return;
+                  AppToast.show(
+                    context,
+                    ok ? l10n.toastSnoozeOk : l10n.toastSnoozeFail,
+                    tone: ok ? AppToastTone.info : AppToastTone.warning,
+                    icon: Icons.notifications_paused_rounded,
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.tune_rounded),
                 tooltip: l10n.settings,
@@ -145,7 +174,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
                   children: [
-                    Center(child: StreakBadge(streak: repo.calculateStreak())),
+                    Center(
+                      child: StreakBadge(
+                        info: repo.calculateStreak(),
+                        onUseAmnesty: () async {
+                          final ok = await repo.useAmnestyToday();
+                          if (!context.mounted) return;
+                          AppToast.show(
+                            context,
+                            ok
+                                ? l10n.toastAmnestyUsed
+                                : l10n.toastAmnestyUnavailable,
+                            tone: ok
+                                ? AppToastTone.success
+                                : AppToastTone.warning,
+                            icon: Icons.shield_moon_rounded,
+                          );
+                        },
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     GlassCard(
                       padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),

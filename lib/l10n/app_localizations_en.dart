@@ -325,4 +325,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String toastHoldLogged(int amount) {
     return 'Logged +$amount ml';
   }
+
+  @override
+  String get notifBoilerAction => 'From boiler';
+
+  @override
+  String get notifSnoozeAction => 'Quiet 20 min';
+
+  @override
+  String get notifSnoozeTitle => 'Snoozed sip';
+
+  @override
+  String get useAmnesty => 'Use monthly amnesty (50%+)';
+
+  @override
+  String get amnestyUsedBadge => 'Amnesty';
+
+  @override
+  String get amnestyHint => '1 soft day / month at ≥50% keeps your streak';
+
+  @override
+  String get toastAmnestyUsed => 'Amnesty used — streak safe this month';
+
+  @override
+  String get toastAmnestyUnavailable =>
+      'Amnesty needs ≥50% and one use per month';
+
+  @override
+  String get snoozeNextSlot => 'Quiet next slot (20 min)';
+
+  @override
+  String get toastSnoozeOk => 'Next reminder shifted +20 min';
+
+  @override
+  String get toastSnoozeFail => 'Nothing left to snooze today';
 }

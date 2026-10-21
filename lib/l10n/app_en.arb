@@ -187,5 +187,16 @@
     "placeholders": {
       "amount": {"type": "int"}
     }
-  }
+  },
+  "notifBoilerAction": "From boiler",
+  "notifSnoozeAction": "Quiet 20 min",
+  "notifSnoozeTitle": "Snoozed sip",
+  "useAmnesty": "Use monthly amnesty (50%+)",
+  "amnestyUsedBadge": "Amnesty",
+  "amnestyHint": "1 soft day / month at ≥50% keeps your streak",
+  "toastAmnestyUsed": "Amnesty used — streak safe this month",
+  "toastAmnestyUnavailable": "Amnesty needs ≥50% and one use per month",
+  "snoozeNextSlot": "Quiet next slot (20 min)",
+  "toastSnoozeOk": "Next reminder shifted +20 min",
+  "toastSnoozeFail": "Nothing left to snooze today"
 }

@@ -655,6 +655,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Logged +{amount} ml'**
   String toastHoldLogged(int amount);
+
+  /// No description provided for @notifBoilerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'From boiler'**
+  String get notifBoilerAction;
+
+  /// No description provided for @notifSnoozeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet 20 min'**
+  String get notifSnoozeAction;
+
+  /// No description provided for @notifSnoozeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed sip'**
+  String get notifSnoozeTitle;
+
+  /// No description provided for @useAmnesty.
+  ///
+  /// In en, this message translates to:
+  /// **'Use monthly amnesty (50%+)'**
+  String get useAmnesty;
+
+  /// No description provided for @amnestyUsedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Amnesty'**
+  String get amnestyUsedBadge;
+
+  /// No description provided for @amnestyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1 soft day / month at ≥50% keeps your streak'**
+  String get amnestyHint;
+
+  /// No description provided for @toastAmnestyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Amnesty used — streak safe this month'**
+  String get toastAmnestyUsed;
+
+  /// No description provided for @toastAmnestyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Amnesty needs ≥50% and one use per month'**
+  String get toastAmnestyUnavailable;
+
+  /// No description provided for @snoozeNextSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet next slot (20 min)'**
+  String get snoozeNextSlot;
+
+  /// No description provided for @toastSnoozeOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Next reminder shifted +20 min'**
+  String get toastSnoozeOk;
+
+  /// No description provided for @toastSnoozeFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing left to snooze today'**
+  String get toastSnoozeFail;
 }
 
 class _AppLocalizationsDelegate

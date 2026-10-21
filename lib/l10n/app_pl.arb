@@ -92,5 +92,16 @@
   "confirmBoth": "Hold albo shake",
   "confirmHoldHint": "Przytrzymaj ~0,8 s",
   "toastShakeLogged": "Shake: +{amount} ml",
-  "toastHoldLogged": "Zapisano +{amount} ml"
+  "toastHoldLogged": "Zapisano +{amount} ml",
+  "notifBoilerAction": "Z bojlera",
+  "notifSnoozeAction": "Cicho 20 min",
+  "notifSnoozeTitle": "Przesunięty łyk",
+  "useAmnesty": "Użyj amnestii miesiąca (≥50%)",
+  "amnestyUsedBadge": "Amnestia",
+  "amnestyHint": "1 miękki dzień / miesiąc przy ≥50% chroni streak",
+  "toastAmnestyUsed": "Amnestia użyta — streak bezpieczny w tym miesiącu",
+  "toastAmnestyUnavailable": "Amnestia: ≥50% celu i max 1× na miesiąc",
+  "snoozeNextSlot": "Cichy slot (+20 min)",
+  "toastSnoozeOk": "Następne przypomnienie za +20 min",
+  "toastSnoozeFail": "Nie ma już slotu do przesunięcia"
 }

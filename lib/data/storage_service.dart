@@ -24,6 +24,8 @@ class StorageService {
   static const _scheduleRedistributedKey = 'schedule_redistributed_v1';
   static const _activeScheduleKey = 'active_schedule_v1';
   static const _dayModifiersKey = 'day_modifiers_v1';
+  static const _amnestyMonthKey = 'amnesty_month_v1';
+  static const _amnestyDateKey = 'amnesty_date_v1';
 
   Future<void> openBoxes() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -39,6 +41,30 @@ class StorageService {
     await _prefs!.remove(_scheduleRedistributedKey);
     await _prefs!.remove(_activeScheduleKey);
     await _prefs!.remove(_dayModifiersKey);
+    await _prefs!.remove(_amnestyMonthKey);
+    await _prefs!.remove(_amnestyDateKey);
+  }
+
+  String? getAmnestyMonthKey() => _prefs?.getString(_amnestyMonthKey);
+
+  String? getAmnestyDateKey() => _prefs?.getString(_amnestyDateKey);
+
+  Future<void> setAmnestyUsed({
+    required String monthKey,
+    required String dateKey,
+  }) async {
+    await openBoxes();
+    await _prefs!.setString(_amnestyMonthKey, monthKey);
+    await _prefs!.setString(_amnestyDateKey, dateKey);
+  }
+
+  Future<void> clearAmnestyIfOtherMonth(String currentMonthKey) async {
+    final stored = getAmnestyMonthKey();
+    if (stored != null && stored != currentMonthKey) {
+      await openBoxes();
+      await _prefs!.remove(_amnestyMonthKey);
+      await _prefs!.remove(_amnestyDateKey);
+    }
   }
 
   DayModifiers getDayModifiers(String dateKey) {

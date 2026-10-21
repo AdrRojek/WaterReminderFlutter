@@ -20,20 +20,32 @@ class NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
   NightWakeCallback? onNightWakeTapped;
   VoidCallback? onDrinkAction;
+  VoidCallback? onBoilerAction;
+  VoidCallback? onSnoozeAction;
   NightWakeCallback? onDailyReset;
 
   static const _waterChannelId = 'water_reminder';
   static const _nightChannelId = 'night_wake';
   static const _resetChannelId = 'schedule_reset';
   static const _drinkActionId = 'DRINK_ACTION';
+  static const _boilerActionId = 'BOILER_ACTION';
+  static const _snoozeActionId = 'SNOOZE_ACTION';
+  static const _waterCategoryId = 'WATER_REMINDER';
   static const _nightPayload = 'night_wake';
   static const _resetPayload = 'schedule_reset';
   static const nightPayload = _nightPayload;
   static const resetPayload = _resetPayload;
+  static const drinkActionId = _drinkActionId;
+  static const boilerActionId = _boilerActionId;
+  static const snoozeActionId = _snoozeActionId;
+  static const snoozeNotificationId = 999001;
 
   bool _initialized = false;
   Future<void>? _initFuture;
   AppLocalizations _l10n = lookupAppLocalizations(const Locale('en'));
+
+  DateTime? _pendingSnoozeWhen;
+  int _pendingSnoozePortion = AppConstants.portionMl;
 
   void useLocalizations(AppLocalizations l10n) {
     _l10n = l10n;
@@ -52,14 +64,37 @@ class NotificationService {
 
       const androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
-      const iosSettings = DarwinInitializationSettings(
+
+      final iosSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
         requestSoundPermission: false,
+        notificationCategories: [
+          DarwinNotificationCategory(
+            _waterCategoryId,
+            actions: [
+              DarwinNotificationAction.plain(
+                _drinkActionId,
+                _l10n.notifDrinkAction,
+              ),
+              DarwinNotificationAction.plain(
+                _boilerActionId,
+                _l10n.notifBoilerAction,
+              ),
+              DarwinNotificationAction.plain(
+                _snoozeActionId,
+                _l10n.notifSnoozeAction,
+                options: {
+                  DarwinNotificationActionOption.foreground,
+                },
+              ),
+            ],
+          ),
+        ],
       );
 
       await _plugin.initialize(
-        const InitializationSettings(
+        InitializationSettings(
           android: androidSettings,
           iOS: iosSettings,
         ),
@@ -166,8 +201,35 @@ class NotificationService {
 
   Future<void> cancelAll() => _plugin.cancelAll();
 
+  Future<void> cancelReminder(ScheduledReminder reminder) =>
+      _plugin.cancel(_notificationIdFor(reminder));
+
   Future<NotificationAppLaunchDetails?> getLaunchDetails() =>
       _plugin.getNotificationAppLaunchDetails();
+
+  List<AndroidNotificationAction> get _androidActions => [
+        AndroidNotificationAction(
+          _drinkActionId,
+          _l10n.notifDrinkAction,
+          showsUserInterface: false,
+        ),
+        AndroidNotificationAction(
+          _boilerActionId,
+          _l10n.notifBoilerAction,
+          showsUserInterface: false,
+        ),
+        AndroidNotificationAction(
+          _snoozeActionId,
+          _l10n.notifSnoozeAction,
+          showsUserInterface: false,
+        ),
+      ];
+
+  DarwinNotificationDetails get _iosWaterDetails => DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: true,
+        categoryIdentifier: _waterCategoryId,
+      );
 
   String _buildBody(
     ScheduledReminder reminder, {
@@ -187,7 +249,6 @@ class NotificationService {
       toSlot,
     );
 
-    // Creatine ritual: hint only until marked taken (morning window).
     if (!creatineTaken && reminder.time.hour < 12) {
       body = '$body · ${_l10n.notifCreatineHint}';
     }
@@ -241,17 +302,9 @@ class NotificationService {
               channelDescription: _l10n.notifChannelWaterDesc,
               importance: Importance.high,
               priority: Priority.high,
-              actions: [
-                AndroidNotificationAction(
-                  _drinkActionId,
-                  _l10n.notifDrinkAction,
-                ),
-              ],
+              actions: _androidActions,
             ),
-            iOS: const DarwinNotificationDetails(
-              presentAlert: true,
-              presentSound: true,
-            ),
+            iOS: _iosWaterDetails,
           ),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
@@ -262,6 +315,82 @@ class NotificationService {
         debugPrint('Failed to schedule ${_formatTime(reminder.time)}: $e');
       }
     }
+
+    await _restorePendingSnooze(
+      currentProgressMl: currentProgressMl,
+      dailyGoalMl: dailyGoalMl,
+      creatineTaken: creatineTaken,
+    );
+  }
+
+  /// Quiet slot: one reminder shifted ~20 minutes later.
+  Future<void> snoozeReminder({
+    required DateTime when,
+    required int portionMl,
+    required int currentProgressMl,
+    required int dailyGoalMl,
+    required bool creatineTaken,
+  }) async {
+    await ensureInitialized();
+    _pendingSnoozeWhen = when;
+    _pendingSnoozePortion = portionMl;
+
+    final reminder = ScheduledReminder(
+      time: when,
+      portionMl: portionMl,
+      cumulativeMl: currentProgressMl + portionMl,
+    );
+
+    try {
+      await _plugin.cancel(snoozeNotificationId);
+      await _plugin.zonedSchedule(
+        snoozeNotificationId,
+        _l10n.notifSnoozeTitle,
+        _buildBody(
+          reminder,
+          currentProgressMl: currentProgressMl,
+          dailyGoalMl: dailyGoalMl,
+          creatineTaken: creatineTaken,
+        ),
+        _toZonedLocal(when),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _waterChannelId,
+            _l10n.notifChannelWater,
+            channelDescription: _l10n.notifChannelWaterDesc,
+            importance: Importance.high,
+            priority: Priority.high,
+            actions: _androidActions,
+          ),
+          iOS: _iosWaterDetails,
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'water_$portionMl',
+      );
+    } catch (e) {
+      debugPrint('Failed to snooze reminder: $e');
+    }
+  }
+
+  Future<void> _restorePendingSnooze({
+    required int currentProgressMl,
+    required int dailyGoalMl,
+    required bool creatineTaken,
+  }) async {
+    final when = _pendingSnoozeWhen;
+    if (when == null || !when.isAfter(DateTime.now())) {
+      _pendingSnoozeWhen = null;
+      return;
+    }
+    await snoozeReminder(
+      when: when,
+      portionMl: _pendingSnoozePortion,
+      currentProgressMl: currentProgressMl,
+      dailyGoalMl: dailyGoalMl,
+      creatineTaken: creatineTaken,
+    );
   }
 
   Future<void> scheduleNightNotification(DateTime referenceDay) async {
@@ -362,7 +491,16 @@ class NotificationService {
       return;
     }
 
-    if (response.actionId == _drinkActionId ||
+    final action = response.actionId;
+    if (action == _boilerActionId) {
+      onBoilerAction?.call();
+      return;
+    }
+    if (action == _snoozeActionId) {
+      onSnoozeAction?.call();
+      return;
+    }
+    if (action == _drinkActionId ||
         response.payload?.startsWith('water_') == true) {
       onDrinkAction?.call();
       return;

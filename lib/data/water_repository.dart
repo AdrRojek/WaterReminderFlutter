@@ -8,6 +8,7 @@ import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
 import '../models/daily_completion.dart';
 import '../models/day_modifiers.dart';
+import '../models/streak_info.dart';
 import '../models/water_day_entry.dart';
 import '../services/notification_service.dart';
 import '../services/schedule_calculator.dart';
@@ -169,40 +170,126 @@ class WaterRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  int calculateStreak() {
-    final sorted = List<DailyCompletion>.from(_completions)
-      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+  String get _monthKey {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}';
+  }
+
+  StreakInfo calculateStreak() {
+    final monthKey = _monthKey;
+    // ignore: discarded_futures
+    _storage.clearAmnestyIfOtherMonth(monthKey);
+
+    final amnestyMonth = _storage.getAmnestyMonthKey();
+    final amnestyDate = _storage.getAmnestyDateKey();
+    final amnestyUsedThisMonth = amnestyMonth == monthKey;
+    final byDate = {
+      for (final c in _completions) c.dateKey: c,
+    };
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final todayCompletion = byDate[todayKey];
 
     var streak = 0;
-    var expected = DateTime.now();
-
-    final todayCompletion = sorted.where((c) => c.dateKey == todayKey);
-    if (todayCompletion.isNotEmpty && todayCompletion.first.done) {
+    var expected = today;
+    if (todayCompletion != null && todayCompletion.countsForStreak) {
       streak++;
-      expected = expected.subtract(const Duration(days: 1));
+      expected = today.subtract(const Duration(days: 1));
     } else {
-      expected = expected.subtract(const Duration(days: 1));
+      expected = today.subtract(const Duration(days: 1));
     }
 
-    for (final entry in sorted) {
-      if (entry.dateKey == todayKey) continue;
-
-      final entryDate = DateTime.parse(entry.dateKey);
-      while (entryDate.isBefore(
-        DateTime(expected.year, expected.month, expected.day),
-      )) {
-        return streak;
-      }
-
-      if (entry.dateKey == _dateKey(expected) && entry.done) {
+    for (var i = 0; i < 400; i++) {
+      final key = _dateKey(expected);
+      final completion = byDate[key];
+      if (completion != null && completion.countsForStreak) {
         streak++;
         expected = expected.subtract(const Duration(days: 1));
-      } else if (entry.dateKey == _dateKey(expected)) {
-        return streak;
+        continue;
       }
+      break;
     }
 
-    return streak;
+    final half = (_settings.dailyGoalMl * 0.5).round();
+    final amnestyAvailable = !amnestyUsedThisMonth &&
+        todayProgress >= half &&
+        todayProgress < _settings.dailyGoalMl &&
+        (todayCompletion == null || !todayCompletion.countsForStreak);
+
+    return StreakInfo(
+      streak: streak,
+      amnestyAvailable: amnestyAvailable,
+      amnestyUsedThisMonth: amnestyUsedThisMonth,
+      amnestyDateKey: amnestyUsedThisMonth ? amnestyDate : null,
+    );
+  }
+
+  /// Once per month: keep streak with ≥50% of the goal (wild day).
+  Future<bool> useAmnestyToday() async {
+    final info = calculateStreak();
+    if (!info.amnestyAvailable) return false;
+
+    final existing = _storage.getCompletionForDate(todayKey);
+    final completion = existing ??
+        DailyCompletion(dateKey: todayKey, done: false, amnesty: true);
+    completion.amnesty = true;
+    completion.done = todayProgress >= _settings.dailyGoalMl;
+    await _storage.saveCompletion(completion);
+    await _storage.setAmnestyUsed(monthKey: _monthKey, dateKey: todayKey);
+    _reload();
+    return true;
+  }
+
+  /// Push the next reminder ~20 minutes later (silent / quiet slot).
+  Future<bool> snoozeNextSlot({
+    Duration delay = const Duration(minutes: 20),
+  }) async {
+    if (!_settings.notificationsEnabled) return false;
+    _bindNotificationL10n();
+    final now = DateTime.now();
+    final when = now.add(delay);
+    final end = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      AppConstants.dayEndHour,
+      AppConstants.dayEndMinute,
+    );
+    if (when.isAfter(end)) return false;
+
+    // Cancel the soonest upcoming slot so it doesn't double-fire.
+    final upcoming = _upcomingReminders(now);
+    if (upcoming.isNotEmpty) {
+      await NotificationService.instance.cancelReminder(upcoming.first);
+    }
+
+    await NotificationService.instance.snoozeReminder(
+      when: when,
+      portionMl: _settings.portionMl,
+      currentProgressMl: todayProgress,
+      dailyGoalMl: _settings.dailyGoalMl,
+      creatineTaken: isKreatynaToday,
+    );
+    return true;
+  }
+
+  List<ScheduledReminder> _upcomingReminders(DateTime now) {
+    final saved = _storage.getActiveScheduleMaps();
+    var schedule =
+        saved.map(_reminderFromMap).whereType<ScheduledReminder>().toList();
+    if (schedule.isEmpty) {
+      schedule = ScheduleCalculator.defaultDailySchedule(
+        day: now,
+        portionMl: _settings.portionMl,
+      );
+    }
+    return ScheduleCalculator.filterAheadOfProgress(
+      schedule,
+      todayProgress,
+      dailyGoalMl: _settings.dailyGoalMl,
+    ).where((r) => r.time.isAfter(now)).toList()
+      ..sort((a, b) => a.time.compareTo(b.time));
   }
 
   int recommendedMlNow() =>
@@ -372,6 +459,7 @@ class WaterRepository extends ChangeNotifier {
     final existing = _storage.getCompletionForDate(dateKey);
     if (existing != null) {
       existing.done = done;
+      if (done) existing.amnesty = false;
       await _storage.saveCompletion(existing);
     } else {
       await _storage.saveCompletion(

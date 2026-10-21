@@ -325,4 +325,39 @@ class AppLocalizationsPl extends AppLocalizations {
   String toastHoldLogged(int amount) {
     return 'Zapisano +$amount ml';
   }
+
+  @override
+  String get notifBoilerAction => 'Z bojlera';
+
+  @override
+  String get notifSnoozeAction => 'Cicho 20 min';
+
+  @override
+  String get notifSnoozeTitle => 'Przesunięty łyk';
+
+  @override
+  String get useAmnesty => 'Użyj amnestii miesiąca (≥50%)';
+
+  @override
+  String get amnestyUsedBadge => 'Amnestia';
+
+  @override
+  String get amnestyHint => '1 miękki dzień / miesiąc przy ≥50% chroni streak';
+
+  @override
+  String get toastAmnestyUsed =>
+      'Amnestia użyta — streak bezpieczny w tym miesiącu';
+
+  @override
+  String get toastAmnestyUnavailable =>
+      'Amnestia: ≥50% celu i max 1× na miesiąc';
+
+  @override
+  String get snoozeNextSlot => 'Cichy slot (+20 min)';
+
+  @override
+  String get toastSnoozeOk => 'Następne przypomnienie za +20 min';
+
+  @override
+  String get toastSnoozeFail => 'Nie ma już slotu do przesunięcia';
 }
