@@ -8,6 +8,7 @@ import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
 import '../models/daily_completion.dart';
 import '../models/day_modifiers.dart';
+import '../models/rewards_state.dart';
 import '../models/water_day_entry.dart';
 
 class StorageService {
@@ -26,6 +27,7 @@ class StorageService {
   static const _dayModifiersKey = 'day_modifiers_v1';
   static const _amnestyMonthKey = 'amnesty_month_v1';
   static const _amnestyDateKey = 'amnesty_date_v1';
+  static const _rewardsKey = 'rewards_v1';
 
   Future<void> openBoxes() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -43,6 +45,25 @@ class StorageService {
     await _prefs!.remove(_dayModifiersKey);
     await _prefs!.remove(_amnestyMonthKey);
     await _prefs!.remove(_amnestyDateKey);
+    await _prefs!.remove(_rewardsKey);
+  }
+
+  RewardsState getRewards() {
+    if (_prefs == null) return RewardsState();
+    final raw = _prefs!.getString(_rewardsKey);
+    if (raw == null) return RewardsState();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return RewardsState.fromMap(decoded);
+    } catch (e) {
+      debugPrint('Rewards decode error: $e');
+    }
+    return RewardsState();
+  }
+
+  Future<void> saveRewards(RewardsState rewards) async {
+    await openBoxes();
+    await _prefs!.setString(_rewardsKey, jsonEncode(rewards.toMap()));
   }
 
   String? getAmnestyMonthKey() => _prefs?.getString(_amnestyMonthKey);

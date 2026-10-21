@@ -4,13 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
-import '../widgets/adjust_water_sheet.dart';
+import '../models/rewards_state.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/catch_up_card.dart';
-import '../widgets/day_tags_row.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/history_list.dart';
-import '../widgets/past_day_sheet.dart';
 import '../widgets/progress_ring.dart';
 import '../widgets/quick_action_buttons.dart';
 import '../widgets/shake_drink_listener.dart';
@@ -88,13 +86,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         final catchUp = repo.catchUpPlanNow();
         final requireHold = repo.settings.confirmHold;
         final shakeEnabled = repo.settings.confirmShake;
+        final rewards = repo.rewards;
+        final streakInfo = repo.calculateStreak();
+
+        void showUnlockToasts() {
+          final unlocked = repo.consumeUnlockToasts();
+          for (final id in unlocked) {
+            if (!context.mounted) return;
+            AppToast.show(
+              context,
+              l10n.toastRewardUnlocked(_rewardTitle(l10n, id)),
+              tone: AppToastTone.success,
+              icon: Icons.emoji_events_rounded,
+            );
+          }
+        }
 
         Future<void> logPortion(
           int amount, {
           String? toast,
+          bool countConfirm = false,
         }) async {
           await repo.addWater(amount);
-          if (!context.mounted || toast == null) return;
+          if (countConfirm) await repo.registerConfirm();
+          if (!context.mounted) return;
+          showUnlockToasts();
+          if (toast == null) return;
           AppToast.show(
             context,
             toast,
@@ -107,22 +124,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           enabled: shakeEnabled,
           onShake: () {
             final amount = repo.settings.portionMl;
-            logPortion(amount, toast: l10n.toastShakeLogged(amount));
+            logPortion(
+              amount,
+              toast: l10n.toastShakeLogged(amount),
+              countConfirm: true,
+            );
           },
           child: Scaffold(
-          extendBody: true,
           extendBodyBehindAppBar: true,
           appBar: AppBar(
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    'assets/brand/logo.png',
-                    width: 28,
-                    height: 28,
-                    fit: BoxFit.cover,
+                Container(
+                  padding: EdgeInsets.all(rewards.goldLogo ? 2 : 0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: rewards.goldLogo
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFD54F), Color(0xFFFF8F00)],
+                          )
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/brand/logo.png',
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -164,7 +195,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ],
           ),
           body: Container(
-            decoration: AppTheme.backgroundDecoration,
+            decoration: AppTheme.backgroundFor(
+              deepOcean: rewards.deepOcean,
+              aurora: rewards.auroraGlow,
+            ),
             child: SafeArea(
               child: RefreshIndicator(
                 color: AppTheme.primary,
@@ -172,23 +206,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   await setupNotifications(ref.read(waterRepositoryProvider));
                 },
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
                   children: [
                     Center(
                       child: StreakBadge(
-                        info: repo.calculateStreak(),
-                        onUseAmnesty: () async {
-                          final ok = await repo.useAmnestyToday();
+                        info: streakInfo,
+                        rewards: rewards,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: _KreatynaChip(
+                        active: repo.isKreatynaToday,
+                        onTap: () async {
+                          await repo.toggleKreatyna();
                           if (!context.mounted) return;
+                          final taken =
+                              ref.read(waterRepositoryProvider).isKreatynaToday;
                           AppToast.show(
                             context,
-                            ok
-                                ? l10n.toastAmnestyUsed
-                                : l10n.toastAmnestyUnavailable,
-                            tone: ok
+                            taken
+                                ? l10n.toastCreatineOn
+                                : l10n.toastCreatineOff,
+                            tone: taken
                                 ? AppToastTone.success
-                                : AppToastTone.warning,
-                            icon: Icons.shield_moon_rounded,
+                                : AppToastTone.info,
+                            icon: taken
+                                ? Icons.check_circle_rounded
+                                : Icons.medication_outlined,
                           );
                         },
                       ),
@@ -202,6 +247,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             child: ProgressRing(
                               progress: progress,
                               goal: goal,
+                              animated: rewards.animatedRing,
+                              aurora: rewards.auroraGlow,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -238,6 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         onApply: () async {
                           await repo.applyCatchUpPlan();
                           if (!context.mounted) return;
+                          showUnlockToasts();
                           AppToast.show(
                             context,
                             l10n.toastCatchUpApplied,
@@ -247,11 +295,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         },
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    DayTagsRow(
-                      modifiers: repo.dayModifiers,
-                      onChanged: repo.updateDayModifiers,
-                    ),
                     const SizedBox(height: 20),
                     QuickActionButtons(
                       portionMl: repo.settings.portionMl,
@@ -262,6 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         toast: requireHold
                             ? l10n.toastHoldLogged(repo.settings.portionMl)
                             : null,
+                        countConfirm: requireHold,
                       ),
                       onAdd500: () => logPortion(
                         repo.settings.portionMl * 2,
@@ -270,10 +314,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 repo.settings.portionMl * 2,
                               )
                             : null,
+                        countConfirm: requireHold,
                       ),
                       onBoiler250: () async {
                         await repo.useBoiler(repo.settings.portionMl);
-                        if (!context.mounted || !requireHold) return;
+                        if (requireHold) await repo.registerConfirm();
+                        if (!context.mounted) return;
+                        showUnlockToasts();
+                        if (!requireHold) return;
                         AppToast.show(
                           context,
                           l10n.toastHoldLogged(repo.settings.portionMl),
@@ -312,24 +360,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
           ),
-          bottomNavigationBar: _BottomDock(
-            kreatynaActive: repo.isKreatynaToday,
-            onKreatyna: () async {
-              await repo.toggleKreatyna();
-              if (!context.mounted) return;
-              final taken = ref.read(waterRepositoryProvider).isKreatynaToday;
-              AppToast.show(
-                context,
-                taken ? l10n.toastCreatineOn : l10n.toastCreatineOff,
-                tone: taken ? AppToastTone.success : AppToastTone.info,
-                icon: taken
-                    ? Icons.check_circle_rounded
-                    : Icons.medication_outlined,
-              );
-            },
-            onUndo: () => showAdjustWaterSheet(context, repo),
-            onCalendar: () => showPastDaySheet(context, repo),
-          ),
         ),
         );
       },
@@ -337,63 +367,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 }
 
-class _BottomDock extends StatelessWidget {
-  const _BottomDock({
-    required this.kreatynaActive,
-    required this.onKreatyna,
-    required this.onUndo,
-    required this.onCalendar,
-  });
-
-  final bool kreatynaActive;
-  final VoidCallback onKreatyna;
-  final VoidCallback onUndo;
-  final VoidCallback onCalendar;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A2D44).withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: Row(
-          children: [
-            _KreatynaChip(
-              active: kreatynaActive,
-              onTap: onKreatyna,
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: FilledButton.icon(
-                  onPressed: onUndo,
-                  icon: const Icon(Icons.undo_rounded, size: 18),
-                  label: Text(l10n.undo),
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFFE57373).withValues(alpha: 0.9),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 48),
-                  ),
-                ),
-              ),
-            ),
-            _DockButton(
-              icon: Icons.calendar_month_rounded,
-              onTap: onCalendar,
-              tooltip: l10n.pastDay,
-            ),
-          ],
-        ),
-      ),
-    );
+String _rewardTitle(AppLocalizations l10n, String id) {
+  switch (id) {
+    case RewardIds.streak7:
+      return l10n.rewardStreak7Title;
+    case RewardIds.streak14:
+      return l10n.rewardStreak14Title;
+    case RewardIds.streak30:
+      return l10n.rewardStreak30Title;
+    case RewardIds.firstCatchUp:
+      return l10n.rewardCatchUpTitle;
+    case RewardIds.confirms50:
+      return l10n.rewardConfirms50Title;
+    case RewardIds.confirms100:
+      return l10n.rewardConfirms100Title;
+    case RewardIds.goalStreak3:
+      return l10n.rewardGoal3Title;
+    case RewardIds.ironMonth:
+      return l10n.rewardIronTitle;
+    default:
+      return id;
   }
 }
 
@@ -429,7 +422,7 @@ class _KreatynaChip extends StatelessWidget {
                   : Colors.white.withValues(alpha: 0.15),
             ),
           ),
-          child: Column(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -437,12 +430,12 @@ class _KreatynaChip extends StatelessWidget {
                 size: 18,
                 color: Colors.white,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(width: 8),
               Text(
                 active ? l10n.creatineTaken : l10n.creatine,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -450,32 +443,6 @@ class _KreatynaChip extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DockButton extends StatelessWidget {
-  const _DockButton({
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton.filled(
-      tooltip: tooltip,
-      onPressed: onTap,
-      style: IconButton.styleFrom(
-        backgroundColor: Colors.white.withValues(alpha: 0.08),
-        foregroundColor: Colors.white,
-        fixedSize: const Size(48, 48),
-      ),
-      icon: Icon(icon, size: 22),
     );
   }
 }

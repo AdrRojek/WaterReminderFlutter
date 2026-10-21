@@ -8,6 +8,7 @@ import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
 import '../models/daily_completion.dart';
 import '../models/day_modifiers.dart';
+import '../models/rewards_state.dart';
 import '../models/streak_info.dart';
 import '../models/water_day_entry.dart';
 import '../services/notification_service.dart';
@@ -23,14 +24,25 @@ class WaterRepository extends ChangeNotifier {
   BoilerState _boiler = BoilerState(amountMl: AppConstants.boilerCapacityMl);
   AppSettings _settings = AppSettings();
   DayModifiers _dayModifiers = const DayModifiers();
+  RewardsState _rewards = RewardsState();
   bool _initialized = false;
+
+  /// Newly unlocked reward ids since last consume (for toasts).
+  final List<String> _pendingUnlockToasts = [];
 
   List<WaterDayEntry> get entries => List.unmodifiable(_entries);
   List<DailyCompletion> get completions => List.unmodifiable(_completions);
   BoilerState get boiler => _boiler;
   AppSettings get settings => _settings;
   DayModifiers get dayModifiers => _dayModifiers;
+  RewardsState get rewards => _rewards;
   bool get isInitialized => _initialized;
+
+  List<String> consumeUnlockToasts() {
+    final copy = List<String>.from(_pendingUnlockToasts);
+    _pendingUnlockToasts.clear();
+    return copy;
+  }
 
   String get todayKey => _dateKey(DateTime.now());
 
@@ -51,9 +63,12 @@ class WaterRepository extends ChangeNotifier {
     _completions = _storage.getAllCompletions();
     _boiler = _storage.getBoiler();
     _settings = _storage.getSettings();
+    _rewards = _storage.getRewards();
     await _storage.getOrCreateToday(todayKey);
     _entries = _storage.getAllWaterEntries();
     _dayModifiers = _storage.getDayModifiers(todayKey);
+    await reconcileAmnesty();
+    await refreshRewards();
     _initialized = true;
     notifyListeners();
   }
@@ -66,8 +81,16 @@ class WaterRepository extends ChangeNotifier {
     await _updateCompletion(key, entry.progressMl);
     _reload();
     if (key == todayKey) {
+      await refreshRewards();
       await _refreshNotificationsForToday();
     }
+  }
+
+  /// Count intentional confirms (hold / shake / notif actions).
+  Future<void> registerConfirm() async {
+    _rewards = _rewards.copyWith(confirmCount: _rewards.confirmCount + 1);
+    await _storage.saveRewards(_rewards);
+    await refreshRewards();
   }
 
   Future<void> subtractWater(int amountMl, {String? dateKey}) async {
@@ -113,12 +136,16 @@ class WaterRepository extends ChangeNotifier {
       currentProgressMl: todayProgress,
       dailyGoalMl: _settings.dailyGoalMl,
       portionMl: _settings.portionMl,
-      paceNudgeMl: _dayModifiers.paceNudgeMl,
     );
   }
 
   /// One-tap catch-up: equal gaps from now until 21:00 for remaining goal.
-  Future<void> applyCatchUpPlan() => handleNightWakeUp();
+  Future<void> applyCatchUpPlan() async {
+    _rewards = _rewards.copyWith(catchUpCount: _rewards.catchUpCount + 1);
+    await _storage.saveRewards(_rewards);
+    await handleNightWakeUp();
+    await refreshRewards();
+  }
 
   Future<void> useBoiler(int amountMl) async {
     if (_boiler.amountMl < amountMl) return;
@@ -177,9 +204,6 @@ class WaterRepository extends ChangeNotifier {
 
   StreakInfo calculateStreak() {
     final monthKey = _monthKey;
-    // ignore: discarded_futures
-    _storage.clearAmnestyIfOtherMonth(monthKey);
-
     final amnestyMonth = _storage.getAmnestyMonthKey();
     final amnestyDate = _storage.getAmnestyDateKey();
     final amnestyUsedThisMonth = amnestyMonth == monthKey;
@@ -211,34 +235,116 @@ class WaterRepository extends ChangeNotifier {
       break;
     }
 
-    final half = (_settings.dailyGoalMl * 0.5).round();
-    final amnestyAvailable = !amnestyUsedThisMonth &&
-        todayProgress >= half &&
-        todayProgress < _settings.dailyGoalMl &&
-        (todayCompletion == null || !todayCompletion.countsForStreak);
-
     return StreakInfo(
       streak: streak,
-      amnestyAvailable: amnestyAvailable,
+      amnestyAvailable: false,
       amnestyUsedThisMonth: amnestyUsedThisMonth,
       amnestyDateKey: amnestyUsedThisMonth ? amnestyDate : null,
     );
   }
 
-  /// Once per month: keep streak with ≥50% of the goal (wild day).
-  Future<bool> useAmnestyToday() async {
-    final info = calculateStreak();
-    if (!info.amnestyAvailable) return false;
+  /// Auto: once/month, first past day with ≥50% that would break streak gets amnesty.
+  Future<void> reconcileAmnesty() async {
+    final monthKey = _monthKey;
+    await _storage.clearAmnestyIfOtherMonth(monthKey);
+    if (_storage.getAmnestyMonthKey() == monthKey) {
+      _completions = _storage.getAllCompletions();
+      return;
+    }
 
-    final existing = _storage.getCompletionForDate(todayKey);
-    final completion = existing ??
-        DailyCompletion(dateKey: todayKey, done: false, amnesty: true);
-    completion.amnesty = true;
-    completion.done = todayProgress >= _settings.dailyGoalMl;
-    await _storage.saveCompletion(completion);
-    await _storage.setAmnestyUsed(monthKey: _monthKey, dateKey: todayKey);
-    _reload();
-    return true;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final half = (_settings.dailyGoalMl * 0.5).round();
+
+    for (var d = 1; d <= 31; d++) {
+      final day = today.subtract(Duration(days: d));
+      final dayMonth =
+          '${day.year}-${day.month.toString().padLeft(2, '0')}';
+      if (dayMonth != monthKey) break;
+
+      final key = _dateKey(day);
+      final completion = _storage.getCompletionForDate(key);
+      if (completion != null && completion.countsForStreak) continue;
+
+      final progress = _storage.getEntryForDate(key)?.progressMl ?? 0;
+      if (progress >= half && progress < _settings.dailyGoalMl) {
+        final updated = completion ??
+            DailyCompletion(dateKey: key, done: false, amnesty: true);
+        updated.amnesty = true;
+        updated.done = false;
+        await _storage.saveCompletion(updated);
+        await _storage.setAmnestyUsed(monthKey: monthKey, dateKey: key);
+        _completions = _storage.getAllCompletions();
+        notifyListeners();
+        return;
+      }
+
+      // Hard miss (<50%) — streak breaks; don't amnesty an older day instead.
+      if (progress < half) return;
+    }
+  }
+
+  Future<void> refreshRewards() async {
+    await reconcileAmnesty();
+    final streak = calculateStreak().streak;
+    var next = _rewards.copyWith(
+      maxStreak: streak > _rewards.maxStreak ? streak : _rewards.maxStreak,
+    );
+    final unlocked = {...next.unlocked};
+
+    void unlock(String id) {
+      if (unlocked.add(id) && !next.seenUnlockToast.contains(id)) {
+        _pendingUnlockToasts.add(id);
+      }
+    }
+
+    if (streak >= 7 || next.maxStreak >= 7) unlock(RewardIds.streak7);
+    if (streak >= 14 || next.maxStreak >= 14) unlock(RewardIds.streak14);
+    if (streak >= 30 || next.maxStreak >= 30) unlock(RewardIds.streak30);
+    if (next.catchUpCount >= 1) unlock(RewardIds.firstCatchUp);
+    if (next.confirmCount >= 50) unlock(RewardIds.confirms50);
+    if (next.confirmCount >= 100) unlock(RewardIds.confirms100);
+
+    // Consecutive full-goal days (no amnesty) ≥ 3.
+    var goalRun = 0;
+    final sorted = List<DailyCompletion>.from(_completions)
+      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    for (final c in sorted) {
+      if (c.done && !c.amnesty) {
+        goalRun++;
+      } else if (c.dateKey == todayKey) {
+        continue;
+      } else {
+        break;
+      }
+    }
+    if (goalRun >= 3) unlock(RewardIds.goalStreak3);
+
+    // Iron month: finished previous calendar month without using amnesty,
+    // with at least 20 completed days.
+    final now = DateTime.now();
+    final prev = DateTime(now.year, now.month - 1, 1);
+    final prevMonth =
+        '${prev.year}-${prev.month.toString().padLeft(2, '0')}';
+    final amnestyMonth = _storage.getAmnestyMonthKey();
+    if (amnestyMonth != prevMonth) {
+      final daysInPrev = DateTime(prev.year, prev.month + 1, 0).day;
+      final doneInPrev = _completions
+          .where(
+            (c) =>
+                c.dateKey.startsWith(prevMonth) && c.done && !c.amnesty,
+          )
+          .length;
+      if (doneInPrev >= (daysInPrev * 0.7).round()) {
+        unlock(RewardIds.ironMonth);
+      }
+    }
+
+    final seen = {...next.seenUnlockToast, ..._pendingUnlockToasts};
+    next = next.copyWith(unlocked: unlocked, seenUnlockToast: seen);
+    _rewards = next;
+    await _storage.saveRewards(_rewards);
+    notifyListeners();
   }
 
   /// Push the next reminder ~20 minutes later (silent / quiet slot).
@@ -301,6 +407,8 @@ class WaterRepository extends ChangeNotifier {
 
   /// Codziennie 9:00–21:00, chyba że dziś już przeliczono „od teraz”.
   Future<void> ensureDailySchedule({bool forceDefault = false}) async {
+    await reconcileAmnesty();
+    await refreshRewards();
     if (!_settings.notificationsEnabled) return;
 
     final today = todayKey;

@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayTagsHint.
   ///
   /// In en, this message translates to:
-  /// **'Pace nudge only — your goal stays the same'**
+  /// **'Doesn’t raise your liter goal. Makes the “behind schedule” card appear sooner (hot +250, training +500, rough morning +250 ml of pace pressure).'**
   String get todayTagsHint;
 
   /// No description provided for @tagHot.
@@ -674,12 +674,6 @@ abstract class AppLocalizations {
   /// **'Snoozed sip'**
   String get notifSnoozeTitle;
 
-  /// No description provided for @useAmnesty.
-  ///
-  /// In en, this message translates to:
-  /// **'Use monthly amnesty (50%+)'**
-  String get useAmnesty;
-
   /// No description provided for @amnestyUsedBadge.
   ///
   /// In en, this message translates to:
@@ -689,20 +683,14 @@ abstract class AppLocalizations {
   /// No description provided for @amnestyHint.
   ///
   /// In en, this message translates to:
-  /// **'1 soft day / month at ≥50% keeps your streak'**
+  /// **'Auto: 1 soft day / month at ≥50% keeps your streak'**
   String get amnestyHint;
 
-  /// No description provided for @toastAmnestyUsed.
+  /// No description provided for @amnestyAutoUsed.
   ///
   /// In en, this message translates to:
-  /// **'Amnesty used — streak safe this month'**
-  String get toastAmnestyUsed;
-
-  /// No description provided for @toastAmnestyUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Amnesty needs ≥50% and one use per month'**
-  String get toastAmnestyUnavailable;
+  /// **'Amnesty auto-applied this month (≥50% day)'**
+  String get amnestyAutoUsed;
 
   /// No description provided for @snoozeNextSlot.
   ///
@@ -721,6 +709,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing left to snooze today'**
   String get toastSnoozeFail;
+
+  /// No description provided for @sectionRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get sectionRewards;
+
+  /// No description provided for @rewardsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetic unlocks — no XP, no paywall'**
+  String get rewardsHint;
+
+  /// No description provided for @rewardsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirms {confirms} · catch-ups {catchUps} · best streak {streak}'**
+  String rewardsProgress(int confirms, int catchUps, int streak);
+
+  /// No description provided for @rewardStreak7Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Golden drop'**
+  String get rewardStreak7Title;
+
+  /// No description provided for @rewardStreak7Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'7-day streak — gold ring on the logo'**
+  String get rewardStreak7Desc;
+
+  /// No description provided for @rewardStreak14Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep ocean'**
+  String get rewardStreak14Title;
+
+  /// No description provided for @rewardStreak14Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'14-day streak — darker background'**
+  String get rewardStreak14Desc;
+
+  /// No description provided for @rewardStreak30Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Living ring'**
+  String get rewardStreak30Title;
+
+  /// No description provided for @rewardStreak30Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'30-day streak — slow animated progress ring'**
+  String get rewardStreak30Desc;
+
+  /// No description provided for @rewardCatchUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comeback kid'**
+  String get rewardCatchUpTitle;
+
+  /// No description provided for @rewardCatchUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'First catch-up rebuild of the day'**
+  String get rewardCatchUpDesc;
+
+  /// No description provided for @rewardConfirms50Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady hands'**
+  String get rewardConfirms50Title;
+
+  /// No description provided for @rewardConfirms50Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'50 hold/shake confirms'**
+  String get rewardConfirms50Desc;
+
+  /// No description provided for @rewardConfirms100Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid sipper'**
+  String get rewardConfirms100Title;
+
+  /// No description provided for @rewardConfirms100Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'100 confirms — title on your streak'**
+  String get rewardConfirms100Desc;
+
+  /// No description provided for @rewardGoal3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora glow'**
+  String get rewardGoal3Title;
+
+  /// No description provided for @rewardGoal3Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'3 full-goal days in a row (no amnesty)'**
+  String get rewardGoal3Desc;
+
+  /// No description provided for @rewardIronTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron month'**
+  String get rewardIronTitle;
+
+  /// No description provided for @rewardIronDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month ≥70% full goals, no amnesty'**
+  String get rewardIronDesc;
+
+  /// No description provided for @rewardTitleSolidSipper.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid sipper'**
+  String get rewardTitleSolidSipper;
+
+  /// No description provided for @toastRewardUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked: {title}'**
+  String toastRewardUnlocked(String title);
+
+  /// No description provided for @sectionAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get sectionAdjust;
+
+  /// No description provided for @undoWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo / adjust water'**
+  String get undoWater;
+
+  /// No description provided for @undoWaterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtract, return to boiler, or reset today'**
+  String get undoWaterSubtitle;
+
+  /// No description provided for @pastDaySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Add water to a past day'**
+  String get pastDaySettings;
+
+  /// No description provided for @pastDaySettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backfill yesterday or any earlier day'**
+  String get pastDaySettingsSubtitle;
+
+  /// No description provided for @openRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards & unlocks'**
+  String get openRewards;
+
+  /// No description provided for @openRewardsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cosmetics you’ve earned'**
+  String get openRewardsSubtitle;
 }
 
 class _AppLocalizationsDelegate

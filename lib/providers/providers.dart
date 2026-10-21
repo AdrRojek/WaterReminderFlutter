@@ -34,9 +34,11 @@ Future<void> setupNotifications(WaterRepository repo) async {
   try {
     NotificationService.instance.onDrinkAction = () async {
       await repo.addWater(repo.settings.portionMl);
+      await repo.registerConfirm();
     };
     NotificationService.instance.onBoilerAction = () async {
       await repo.useBoiler(repo.settings.portionMl);
+      await repo.registerConfirm();
     };
     NotificationService.instance.onSnoozeAction = () async {
       await repo.snoozeNextSlot();

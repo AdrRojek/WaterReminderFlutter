@@ -5,47 +5,98 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 
-class ProgressRing extends StatelessWidget {
+class ProgressRing extends StatefulWidget {
   const ProgressRing({
     super.key,
     required this.progress,
     required this.goal,
     this.size = 200,
+    this.animated = false,
+    this.aurora = false,
   });
 
   final int progress;
   final int goal;
   final double size;
+  final bool animated;
+  final bool aurora;
+
+  @override
+  State<ProgressRing> createState() => _ProgressRingState();
+}
+
+class _ProgressRingState extends State<ProgressRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spin;
+
+  @override
+  void initState() {
+    super.initState();
+    _spin = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+    if (widget.animated) _spin.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProgressRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animated && !_spin.isAnimating) {
+      _spin.repeat();
+    } else if (!widget.animated && _spin.isAnimating) {
+      _spin.stop();
+      _spin.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fraction = (progress / goal).clamp(0.0, 1.0);
-    final color = AppTheme.progressColor(progress.toDouble(), goal);
+    final fraction = (widget.progress / widget.goal).clamp(0.0, 1.0);
+    final color = AppTheme.progressColor(
+      widget.progress.toDouble(),
+      widget.goal,
+    );
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Container(
-            width: size * 0.92,
-            height: size * 0.92,
+            width: widget.size * 0.92,
+            height: widget.size * 0.92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.25),
-                  blurRadius: 40,
-                  spreadRadius: 4,
+                  color: (widget.aurora ? AppTheme.accent : color)
+                      .withValues(alpha: widget.aurora ? 0.35 : 0.25),
+                  blurRadius: widget.aurora ? 48 : 40,
+                  spreadRadius: widget.aurora ? 6 : 4,
                 ),
               ],
             ),
           ),
-          CustomPaint(
-            size: Size(size, size),
-            painter: _RingPainter(fraction: fraction, color: color),
+          AnimatedBuilder(
+            animation: _spin,
+            builder: (context, _) {
+              return Transform.rotate(
+                angle: widget.animated ? _spin.value * math.pi * 2 : 0,
+                child: CustomPaint(
+                  size: Size(widget.size, widget.size),
+                  painter: _RingPainter(fraction: fraction, color: color),
+                ),
+              );
+            },
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -54,7 +105,7 @@ class ProgressRing extends StatelessWidget {
                 shaderCallback: (bounds) =>
                     AppTheme.waterGradient.createShader(bounds),
                 child: Text(
-                  '$progress',
+                  '${widget.progress}',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -64,7 +115,7 @@ class ProgressRing extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                l10n.ofGoalMl(goal),
+                l10n.ofGoalMl(widget.goal),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white54,
                       fontWeight: FontWeight.w500,

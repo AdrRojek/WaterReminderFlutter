@@ -6,7 +6,10 @@ import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
 import '../services/notification_service.dart';
+import '../widgets/adjust_water_sheet.dart';
 import '../widgets/app_toast.dart';
+import '../widgets/past_day_sheet.dart';
+import 'rewards_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -96,6 +99,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 }
               },
             ),
+          ),
+          const SizedBox(height: 16),
+          _SectionTitle(title: l10n.sectionAdjust),
+          ListTile(
+            title: Text(l10n.undoWater),
+            subtitle: Text(l10n.undoWaterSubtitle),
+            trailing: const Icon(Icons.undo_rounded),
+            onTap: () => showAdjustWaterSheet(context, repo),
+          ),
+          ListTile(
+            title: Text(l10n.pastDaySettings),
+            subtitle: Text(l10n.pastDaySettingsSubtitle),
+            trailing: const Icon(Icons.calendar_month_rounded),
+            onTap: () => showPastDaySheet(context, repo),
+          ),
+          ListTile(
+            title: Text(l10n.openRewards),
+            subtitle: Text(l10n.openRewardsSubtitle),
+            trailing: const Icon(Icons.emoji_events_rounded),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const RewardsScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
           _SectionTitle(title: l10n.sectionConfirm),

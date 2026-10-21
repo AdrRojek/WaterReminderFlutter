@@ -44,17 +44,37 @@ class AppTheme {
     );
   }
 
-  static BoxDecoration get backgroundDecoration => const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0A1628),
-            Color(0xFF0F2847),
-            Color(0xFF0A1E35),
-          ],
-        ),
-      );
+  static BoxDecoration get backgroundDecoration => backgroundFor(deepOcean: false);
+
+  static BoxDecoration backgroundFor({
+    bool deepOcean = false,
+    bool aurora = false,
+  }) {
+    final colors = deepOcean
+        ? const [
+            Color(0xFF030B16),
+            Color(0xFF061526),
+            Color(0xFF0A1A2E),
+          ]
+        : aurora
+            ? const [
+                Color(0xFF0A1628),
+                Color(0xFF12324A),
+                Color(0xFF1A2540),
+              ]
+            : const [
+                Color(0xFF0A1628),
+                Color(0xFF0F2847),
+                Color(0xFF0A1E35),
+              ];
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: colors,
+      ),
+    );
+  }
 
   static LinearGradient get waterGradient => const LinearGradient(
         colors: [primary, secondary],

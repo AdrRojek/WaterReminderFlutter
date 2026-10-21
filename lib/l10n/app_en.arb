@@ -165,7 +165,7 @@
   "debtAction": "Rebuild from now",
   "toastCatchUpApplied": "Catch-up schedule set until 9 PM",
   "todayTags": "Today feels like…",
-  "todayTagsHint": "Pace nudge only — your goal stays the same",
+  "todayTagsHint": "Doesn’t raise your liter goal. Makes the “behind schedule” card appear sooner (hot +250, training +500, rough morning +250 ml of pace pressure).",
   "tagHot": "Hot day",
   "tagTraining": "Training",
   "tagRoughMorning": "Rough morning",
@@ -191,12 +191,50 @@
   "notifBoilerAction": "From boiler",
   "notifSnoozeAction": "Quiet 20 min",
   "notifSnoozeTitle": "Snoozed sip",
-  "useAmnesty": "Use monthly amnesty (50%+)",
   "amnestyUsedBadge": "Amnesty",
-  "amnestyHint": "1 soft day / month at ≥50% keeps your streak",
-  "toastAmnestyUsed": "Amnesty used — streak safe this month",
-  "toastAmnestyUnavailable": "Amnesty needs ≥50% and one use per month",
+  "amnestyHint": "Auto: 1 soft day / month at ≥50% keeps your streak",
+  "amnestyAutoUsed": "Amnesty auto-applied this month (≥50% day)",
   "snoozeNextSlot": "Quiet next slot (20 min)",
   "toastSnoozeOk": "Next reminder shifted +20 min",
-  "toastSnoozeFail": "Nothing left to snooze today"
+  "toastSnoozeFail": "Nothing left to snooze today",
+  "sectionRewards": "Rewards",
+  "rewardsHint": "Cosmetic unlocks — no XP, no paywall",
+  "rewardsProgress": "Confirms {confirms} · catch-ups {catchUps} · best streak {streak}",
+  "@rewardsProgress": {
+    "placeholders": {
+      "confirms": {"type": "int"},
+      "catchUps": {"type": "int"},
+      "streak": {"type": "int"}
+    }
+  },
+  "rewardStreak7Title": "Golden drop",
+  "rewardStreak7Desc": "7-day streak — gold ring on the logo",
+  "rewardStreak14Title": "Deep ocean",
+  "rewardStreak14Desc": "14-day streak — darker background",
+  "rewardStreak30Title": "Living ring",
+  "rewardStreak30Desc": "30-day streak — slow animated progress ring",
+  "rewardCatchUpTitle": "Comeback kid",
+  "rewardCatchUpDesc": "First catch-up rebuild of the day",
+  "rewardConfirms50Title": "Steady hands",
+  "rewardConfirms50Desc": "50 hold/shake confirms",
+  "rewardConfirms100Title": "Solid sipper",
+  "rewardConfirms100Desc": "100 confirms — title on your streak",
+  "rewardGoal3Title": "Aurora glow",
+  "rewardGoal3Desc": "3 full-goal days in a row (no amnesty)",
+  "rewardIronTitle": "Iron month",
+  "rewardIronDesc": "Previous month ≥70% full goals, no amnesty",
+  "rewardTitleSolidSipper": "Solid sipper",
+  "toastRewardUnlocked": "Unlocked: {title}",
+  "@toastRewardUnlocked": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "sectionAdjust": "Adjust",
+  "undoWater": "Undo / adjust water",
+  "undoWaterSubtitle": "Subtract, return to boiler, or reset today",
+  "pastDaySettings": "Add water to a past day",
+  "pastDaySettingsSubtitle": "Backfill yesterday or any earlier day",
+  "openRewards": "Rewards & unlocks",
+  "openRewardsSubtitle": "Cosmetics you’ve earned"
 }

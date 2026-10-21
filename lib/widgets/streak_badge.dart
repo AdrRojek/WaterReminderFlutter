@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/rewards_state.dart';
 import '../models/streak_info.dart';
 
 class StreakBadge extends StatelessWidget {
   const StreakBadge({
     super.key,
     required this.info,
-    this.onUseAmnesty,
+    required this.rewards,
   });
 
   final StreakInfo info;
-  final VoidCallback? onUseAmnesty;
+  final RewardsState rewards;
 
   @override
   Widget build(BuildContext context) {
@@ -79,31 +80,36 @@ class StreakBadge extends StatelessWidget {
                   ),
                 ),
               ],
+              if (rewards.solidSipper) ...[
+                const SizedBox(width: 8),
+                Text(
+                  l10n.rewardTitleSolidSipper,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+              if (rewards.ironBadge) ...[
+                const SizedBox(width: 6),
+                const Icon(Icons.workspace_premium_rounded,
+                    size: 16, color: Color(0xFFFFD54F)),
+              ],
             ],
           ),
         ),
-        if (info.amnestyAvailable && onUseAmnesty != null) ...[
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: onUseAmnesty,
-            icon: const Icon(Icons.shield_moon_rounded, size: 16),
-            label: Text(l10n.useAmnesty),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFFFD54F),
-              visualDensity: VisualDensity.compact,
-            ),
+        const SizedBox(height: 6),
+        Text(
+          info.amnestyUsedThisMonth
+              ? l10n.amnestyAutoUsed
+              : l10n.amnestyHint,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.35),
+            fontSize: 11,
           ),
-        ] else if (!info.amnestyUsedThisMonth) ...[
-          const SizedBox(height: 6),
-          Text(
-            l10n.amnestyHint,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.35),
-              fontSize: 11,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

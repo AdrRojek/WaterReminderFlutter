@@ -284,7 +284,8 @@ class AppLocalizationsPl extends AppLocalizations {
   String get todayTags => 'Dziś jest raczej…';
 
   @override
-  String get todayTagsHint => 'Tylko tempo — cel litrowy bez zmian';
+  String get todayTagsHint =>
+      'Nie podbija celu w litrach. Przyspiesza kartę „jesteś w tyle” (gorąco +250, trening +500, ciężki start +250 ml „presji tempa”).';
 
   @override
   String get tagHot => 'Gorąco';
@@ -336,21 +337,15 @@ class AppLocalizationsPl extends AppLocalizations {
   String get notifSnoozeTitle => 'Przesunięty łyk';
 
   @override
-  String get useAmnesty => 'Użyj amnestii miesiąca (≥50%)';
-
-  @override
   String get amnestyUsedBadge => 'Amnestia';
 
   @override
-  String get amnestyHint => '1 miękki dzień / miesiąc przy ≥50% chroni streak';
+  String get amnestyHint =>
+      'Auto: 1 miękki dzień / miesiąc przy ≥50% chroni streak';
 
   @override
-  String get toastAmnestyUsed =>
-      'Amnestia użyta — streak bezpieczny w tym miesiącu';
-
-  @override
-  String get toastAmnestyUnavailable =>
-      'Amnestia: ≥50% celu i max 1× na miesiąc';
+  String get amnestyAutoUsed =>
+      'Amnestia użyta auto w tym miesiącu (dzień ≥50%)';
 
   @override
   String get snoozeNextSlot => 'Cichy slot (+20 min)';
@@ -360,4 +355,95 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get toastSnoozeFail => 'Nie ma już slotu do przesunięcia';
+
+  @override
+  String get sectionRewards => 'Nagrody';
+
+  @override
+  String get rewardsHint => 'Odblokowania kosmetyczne — bez XP i paywalla';
+
+  @override
+  String rewardsProgress(int confirms, int catchUps, int streak) {
+    return 'Potwierdzenia $confirms · dogonienia $catchUps · najlepszy streak $streak';
+  }
+
+  @override
+  String get rewardStreak7Title => 'Złota kropla';
+
+  @override
+  String get rewardStreak7Desc => '7 dni streak — złota obręcz na logo';
+
+  @override
+  String get rewardStreak14Title => 'Głęboki ocean';
+
+  @override
+  String get rewardStreak14Desc => '14 dni streak — ciemniejsze tło';
+
+  @override
+  String get rewardStreak30Title => 'Żywy ring';
+
+  @override
+  String get rewardStreak30Desc => '30 dni streak — wolna animacja pierścienia';
+
+  @override
+  String get rewardCatchUpTitle => 'Comeback';
+
+  @override
+  String get rewardCatchUpDesc => 'Pierwsze dogonienie harmonogramu';
+
+  @override
+  String get rewardConfirms50Title => 'Spokojna ręka';
+
+  @override
+  String get rewardConfirms50Desc => '50 potwierdzeń hold/shake';
+
+  @override
+  String get rewardConfirms100Title => 'Solid sipper';
+
+  @override
+  String get rewardConfirms100Desc => '100 potwierdzeń — tytuł przy streaku';
+
+  @override
+  String get rewardGoal3Title => 'Aurora';
+
+  @override
+  String get rewardGoal3Desc => '3 pełne cele z rzędu (bez amnestii)';
+
+  @override
+  String get rewardIronTitle => 'Iron month';
+
+  @override
+  String get rewardIronDesc =>
+      'Poprzedni miesiąc ≥70% pełnych celów, bez amnestii';
+
+  @override
+  String get rewardTitleSolidSipper => 'Solid sipper';
+
+  @override
+  String toastRewardUnlocked(String title) {
+    return 'Odblokowano: $title';
+  }
+
+  @override
+  String get sectionAdjust => 'Korekty';
+
+  @override
+  String get undoWater => 'Cofnij / popraw wodę';
+
+  @override
+  String get undoWaterSubtitle =>
+      'Odejmij, wróć do bojlera albo zresetuj dzień';
+
+  @override
+  String get pastDaySettings => 'Dodaj wodę do poprzedniego dnia';
+
+  @override
+  String get pastDaySettingsSubtitle =>
+      'Uzupełnij wczoraj lub dowolny wcześniejszy dzień';
+
+  @override
+  String get openRewards => 'Nagrody i odblokowania';
+
+  @override
+  String get openRewardsSubtitle => 'Kosmetyki, które zdobyłeś';
 }

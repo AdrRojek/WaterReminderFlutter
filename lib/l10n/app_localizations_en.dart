@@ -284,7 +284,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayTags => 'Today feels like…';
 
   @override
-  String get todayTagsHint => 'Pace nudge only — your goal stays the same';
+  String get todayTagsHint =>
+      'Doesn’t raise your liter goal. Makes the “behind schedule” card appear sooner (hot +250, training +500, rough morning +250 ml of pace pressure).';
 
   @override
   String get tagHot => 'Hot day';
@@ -336,20 +337,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSnoozeTitle => 'Snoozed sip';
 
   @override
-  String get useAmnesty => 'Use monthly amnesty (50%+)';
-
-  @override
   String get amnestyUsedBadge => 'Amnesty';
 
   @override
-  String get amnestyHint => '1 soft day / month at ≥50% keeps your streak';
+  String get amnestyHint =>
+      'Auto: 1 soft day / month at ≥50% keeps your streak';
 
   @override
-  String get toastAmnestyUsed => 'Amnesty used — streak safe this month';
-
-  @override
-  String get toastAmnestyUnavailable =>
-      'Amnesty needs ≥50% and one use per month';
+  String get amnestyAutoUsed => 'Amnesty auto-applied this month (≥50% day)';
 
   @override
   String get snoozeNextSlot => 'Quiet next slot (20 min)';
@@ -359,4 +354,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toastSnoozeFail => 'Nothing left to snooze today';
+
+  @override
+  String get sectionRewards => 'Rewards';
+
+  @override
+  String get rewardsHint => 'Cosmetic unlocks — no XP, no paywall';
+
+  @override
+  String rewardsProgress(int confirms, int catchUps, int streak) {
+    return 'Confirms $confirms · catch-ups $catchUps · best streak $streak';
+  }
+
+  @override
+  String get rewardStreak7Title => 'Golden drop';
+
+  @override
+  String get rewardStreak7Desc => '7-day streak — gold ring on the logo';
+
+  @override
+  String get rewardStreak14Title => 'Deep ocean';
+
+  @override
+  String get rewardStreak14Desc => '14-day streak — darker background';
+
+  @override
+  String get rewardStreak30Title => 'Living ring';
+
+  @override
+  String get rewardStreak30Desc =>
+      '30-day streak — slow animated progress ring';
+
+  @override
+  String get rewardCatchUpTitle => 'Comeback kid';
+
+  @override
+  String get rewardCatchUpDesc => 'First catch-up rebuild of the day';
+
+  @override
+  String get rewardConfirms50Title => 'Steady hands';
+
+  @override
+  String get rewardConfirms50Desc => '50 hold/shake confirms';
+
+  @override
+  String get rewardConfirms100Title => 'Solid sipper';
+
+  @override
+  String get rewardConfirms100Desc => '100 confirms — title on your streak';
+
+  @override
+  String get rewardGoal3Title => 'Aurora glow';
+
+  @override
+  String get rewardGoal3Desc => '3 full-goal days in a row (no amnesty)';
+
+  @override
+  String get rewardIronTitle => 'Iron month';
+
+  @override
+  String get rewardIronDesc => 'Previous month ≥70% full goals, no amnesty';
+
+  @override
+  String get rewardTitleSolidSipper => 'Solid sipper';
+
+  @override
+  String toastRewardUnlocked(String title) {
+    return 'Unlocked: $title';
+  }
+
+  @override
+  String get sectionAdjust => 'Adjust';
+
+  @override
+  String get undoWater => 'Undo / adjust water';
+
+  @override
+  String get undoWaterSubtitle => 'Subtract, return to boiler, or reset today';
+
+  @override
+  String get pastDaySettings => 'Add water to a past day';
+
+  @override
+  String get pastDaySettingsSubtitle => 'Backfill yesterday or any earlier day';
+
+  @override
+  String get openRewards => 'Rewards & unlocks';
+
+  @override
+  String get openRewardsSubtitle => 'Cosmetics you’ve earned';
 }
