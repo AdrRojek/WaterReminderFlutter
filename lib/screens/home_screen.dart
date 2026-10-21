@@ -1,11 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
 import '../widgets/adjust_water_sheet.dart';
+import '../widgets/app_toast.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/history_list.dart';
 import '../widgets/past_day_sheet.dart';
@@ -21,12 +21,33 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   bool _notificationsScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _notificationsScheduled) {
+      ref.read(waterRepositoryProvider).ensureDailySchedule();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final init = ref.watch(initProvider);
+    final l10n = AppLocalizations.of(context);
 
     return init.when(
       loading: () => Scaffold(
@@ -39,7 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Błąd inicjalizacji: $e'),
+            child: Text(l10n.initError('$e')),
           ),
         ),
       ),
@@ -47,7 +68,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (!_notificationsScheduled) {
           _notificationsScheduled = true;
           final repo = ref.read(waterRepositoryProvider);
-          Future.microtask(() => setupNotifications(repo));
+          Future<void>.delayed(const Duration(seconds: 2), () {
+            setupNotifications(repo);
+          });
         }
 
         final repo = ref.watch(waterRepositoryProvider);
@@ -64,14 +87,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           extendBody: true,
           extendBodyBehindAppBar: true,
           appBar: AppBar(
-            title: const Text(
-              'Water Reminder',
-              style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.3),
+            title: Text(
+              l10n.appTitle,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.tune_rounded),
-                tooltip: 'Ustawienia',
+                tooltip: l10n.settings,
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -108,8 +134,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: 20),
                           Text(
                             progress >= goal
-                                ? 'Świetnie! Cel osiągnięty'
-                                : 'Zostało $remaining ml',
+                                ? l10n.goalReached
+                                : l10n.remainingMl(remaining),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -121,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Rekomendacja: $recommended ml',
+                            l10n.recommendation(recommended),
                             style: TextStyle(
                               color: recommendedColor,
                               fontSize: 14,
@@ -146,14 +172,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Row(
                       children: [
                         Text(
-                          'Historia',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          l10n.history,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const Spacer(),
                         Text(
-                          'ostatnie dni',
+                          l10n.recentDays,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.35),
                             fontSize: 13,
@@ -173,7 +200,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           bottomNavigationBar: _BottomDock(
             kreatynaActive: repo.isKreatynaToday,
-            onKreatyna: repo.toggleKreatyna,
+            onKreatyna: () async {
+              await repo.toggleKreatyna();
+              if (!context.mounted) return;
+              final taken = ref.read(waterRepositoryProvider).isKreatynaToday;
+              AppToast.show(
+                context,
+                taken ? l10n.toastCreatineOn : l10n.toastCreatineOff,
+                tone: taken ? AppToastTone.success : AppToastTone.info,
+                icon: taken
+                    ? Icons.check_circle_rounded
+                    : Icons.medication_outlined,
+              );
+            },
             onUndo: () => showAdjustWaterSheet(context, repo),
             onCalendar: () => showPastDaySheet(context, repo),
           ),
@@ -198,50 +237,101 @@ class _BottomDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A2D44).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Row(
+          children: [
+            _KreatynaChip(
+              active: kreatynaActive,
+              onTap: onKreatyna,
             ),
-            child: Row(
-              children: [
-                _DockButton(
-                  icon: Icons.fitness_center_rounded,
-                  active: kreatynaActive,
-                  onTap: onKreatyna,
-                  tooltip: 'Kreatyna',
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: FilledButton.icon(
-                      onPressed: onUndo,
-                      icon: const Icon(Icons.undo_rounded, size: 18),
-                      label: const Text('Cofnij'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFFE57373).withValues(alpha: 0.9),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 48),
-                      ),
-                    ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: FilledButton.icon(
+                  onPressed: onUndo,
+                  icon: const Icon(Icons.undo_rounded, size: 18),
+                  label: Text(l10n.undo),
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFFE57373).withValues(alpha: 0.9),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 48),
                   ),
                 ),
-                _DockButton(
-                  icon: Icons.calendar_month_rounded,
-                  onTap: onCalendar,
-                  tooltip: 'Poprzedni dzień',
-                ),
-              ],
+              ),
             ),
+            _DockButton(
+              icon: Icons.calendar_month_rounded,
+              onTap: onCalendar,
+              tooltip: l10n.pastDay,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KreatynaChip extends StatelessWidget {
+  const _KreatynaChip({
+    required this.active,
+    required this.onTap,
+  });
+
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? const Color(0xFF43A047).withValues(alpha: 0.9)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: active
+                  ? const Color(0xFF66BB6A)
+                  : Colors.white.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                active ? Icons.check_circle_rounded : Icons.medication_rounded,
+                size: 18,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                active ? l10n.creatineTaken : l10n.creatine,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -254,13 +344,11 @@ class _DockButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.tooltip,
-    this.active = false,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final String tooltip;
-  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -268,9 +356,7 @@ class _DockButton extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onTap,
       style: IconButton.styleFrom(
-        backgroundColor: active
-            ? const Color(0xFF43A047).withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.08),
+        backgroundColor: Colors.white.withValues(alpha: 0.08),
         foregroundColor: Colors.white,
         fixedSize: const Size(48, 48),
       ),

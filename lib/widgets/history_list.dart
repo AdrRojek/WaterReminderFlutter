@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/date_format.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/water_day_entry.dart';
 
 class HistoryList extends StatelessWidget {
@@ -16,6 +17,7 @@ class HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final today = DateTime.now();
     final visible = entries.take(14).toList();
 
@@ -32,7 +34,7 @@ class HistoryList extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Brak historii',
+              l10n.noHistory,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
             ),
           ],
@@ -68,10 +70,12 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final date = DateTime.parse(entry.dateKey);
     final fraction = (entry.progressMl / dailyGoal).clamp(0.0, 1.0);
     final done = entry.progressMl >= dailyGoal;
-    final color = AppTheme.progressColor(entry.progressMl.toDouble(), dailyGoal);
+    final color =
+        AppTheme.progressColor(entry.progressMl.toDouble(), dailyGoal);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -87,7 +91,7 @@ class _HistoryTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  formatRelativeDay(date, today),
+                  formatRelativeDay(date, today, l10n),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -97,16 +101,21 @@ class _HistoryTile extends StatelessWidget {
               if (entry.kreatyna)
                 Container(
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: const Color(0xFF43A047).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF66BB6A).withValues(alpha: 0.6),
+                    ),
                   ),
-                  child: const Text(
-                    'K',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                  child: Text(
+                    l10n.creatine,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
                       fontSize: 11,
+                      color: Color(0xFFA5D6A7),
                     ),
                   ),
                 ),

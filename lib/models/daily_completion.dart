@@ -14,7 +14,7 @@ class DailyCompletion {
 
   factory DailyCompletion.fromMap(Map<dynamic, dynamic> map) =>
       DailyCompletion(
-        dateKey: map['dateKey'] as String,
-        done: map['done'] as bool,
+        dateKey: map['dateKey']?.toString() ?? '',
+        done: map['done'] == true,
       );
 }

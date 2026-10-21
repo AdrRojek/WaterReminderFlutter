@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 
 class ProgressRing extends StatelessWidget {
   const ProgressRing({
@@ -18,6 +19,7 @@ class ProgressRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final fraction = (progress / goal).clamp(0.0, 1.0);
     final color = AppTheme.progressColor(progress.toDouble(), goal);
 
@@ -62,7 +64,7 @@ class ProgressRing extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'z $goal ml',
+                l10n.ofGoalMl(goal),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white54,
                       fontWeight: FontWeight.w500,

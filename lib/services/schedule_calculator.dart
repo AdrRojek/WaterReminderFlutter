@@ -12,42 +12,45 @@ class ScheduledReminder {
   final int portionMl;
   final int cumulativeMl;
   final bool isNightWake;
+
+  String get slotKey =>
+      '${time.year}-${time.month}-${time.day}_${time.hour}_${time.minute}';
 }
 
 class ScheduleCalculator {
+  static const _dailyTimes = [
+    (9, 0),
+    (9, 50),
+    (10, 40),
+    (11, 30),
+    (12, 20),
+    (13, 10),
+    (14, 0),
+    (14, 50),
+    (15, 40),
+    (16, 30),
+    (17, 20),
+    (18, 10),
+    (19, 0),
+    (19, 50),
+    (20, 40),
+    (21, 0),
+  ];
+
   /// Domyślny harmonogram jak w wersji iOS (co ~50 min, 9:00–21:00).
   static List<ScheduledReminder> defaultDailySchedule({
     required DateTime day,
     int portionMl = AppConstants.portionMl,
   }) {
-    const times = [
-      (9, 0),
-      (9, 50),
-      (10, 40),
-      (11, 30),
-      (12, 20),
-      (13, 10),
-      (14, 0),
-      (14, 50),
-      (15, 40),
-      (16, 30),
-      (17, 20),
-      (18, 10),
-      (19, 0),
-      (19, 50),
-      (20, 40),
-      (21, 0),
-    ];
-
     return [
-      for (var i = 0; i < times.length; i++)
+      for (var i = 0; i < _dailyTimes.length; i++)
         ScheduledReminder(
           time: DateTime(
             day.year,
             day.month,
             day.day,
-            times[i].$1,
-            times[i].$2,
+            _dailyTimes[i].$1,
+            _dailyTimes[i].$2,
           ),
           portionMl: portionMl,
           cumulativeMl: portionMl * (i + 1),
@@ -104,25 +107,36 @@ class ScheduleCalculator {
     return reminders;
   }
 
-  /// Ile wody powinieneś mieć wypite do aktualnej godziny (od 9:00 co 50 min).
+  /// Ile wody powinieneś mieć wypite — wg ostatniego minionego slotu harmonogramu.
   static int recommendedMlAt(DateTime now, {int portionMl = 250}) {
-    const startHour = AppConstants.dayStartHour;
-    const startMinute = AppConstants.dayStartMinute;
+    final schedule = defaultDailySchedule(day: now, portionMl: portionMl);
+    final passed = schedule.where((slot) => !slot.time.isAfter(now)).toList();
+    if (passed.isEmpty) return 0;
+    return passed.last.cumulativeMl;
+  }
 
-    final start = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      startHour,
-      startMinute,
-    );
+  static ScheduledReminder? slotAt(DateTime time, {int portionMl = 250}) {
+    final schedule = defaultDailySchedule(day: time, portionMl: portionMl);
+    for (final slot in schedule) {
+      if (slot.time.hour == time.hour && slot.time.minute == time.minute) {
+        return slot;
+      }
+    }
+    return null;
+  }
 
-    if (now.isBefore(start)) return 0;
+  /// Zostawia tylko przypomnienia, których cel jest wyższy niż aktualny postęp.
+  static List<ScheduledReminder> filterAheadOfProgress(
+    List<ScheduledReminder> reminders,
+    int currentProgressMl, {
+    int? dailyGoalMl,
+  }) {
+    if (dailyGoalMl != null && currentProgressMl >= dailyGoalMl) {
+      return [];
+    }
 
-    final totalMinutes = now.difference(start).inMinutes;
-    if (totalMinutes < 0) return 0;
-
-    final intervals = (totalMinutes / AppConstants.defaultIntervalMinutes).ceil();
-    return portionMl * intervals;
+    return reminders
+        .where((reminder) => reminder.cumulativeMl > currentProgressMl)
+        .toList();
   }
 }

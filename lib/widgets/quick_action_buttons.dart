@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 class QuickActionButtons extends StatelessWidget {
   const QuickActionButtons({
     super.key,
@@ -20,6 +22,8 @@ class QuickActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       children: [
         Row(
@@ -51,8 +55,8 @@ class QuickActionButtons extends StatelessWidget {
         if (boilerAmount >= portionMl)
           _ActionTile(
             icon: Icons.coffee_rounded,
-            label: 'Bojler $portionMl ml',
-            subtitle: 'Pozostało $boilerAmount ml',
+            label: l10n.boilerPortion(portionMl),
+            subtitle: l10n.boilerRemaining(boilerAmount),
             gradient: const LinearGradient(
               colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
             ),
@@ -62,8 +66,8 @@ class QuickActionButtons extends StatelessWidget {
         else
           _ActionTile(
             icon: Icons.refresh_rounded,
-            label: 'Uzupełnij bojler',
-            subtitle: 'Pusty — naciśnij, aby napełnić',
+            label: l10n.refillBoiler,
+            subtitle: l10n.refillBoilerSubtitle,
             gradient: const LinearGradient(
               colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
             ),

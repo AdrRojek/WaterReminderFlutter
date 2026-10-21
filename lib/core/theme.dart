@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const primary = Color(0xFF5DD4F5);
@@ -10,7 +9,7 @@ class AppTheme {
   static const card = Color(0xFF1A2D44);
 
   static ThemeData get dark {
-    final base = ThemeData(
+    return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
@@ -42,10 +41,6 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-    );
-
-    return base.copyWith(
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme),
     );
   }
 

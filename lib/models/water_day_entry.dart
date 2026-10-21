@@ -16,8 +16,15 @@ class WaterDayEntry {
       };
 
   factory WaterDayEntry.fromMap(Map<dynamic, dynamic> map) => WaterDayEntry(
-        dateKey: map['dateKey'] as String,
-        progressMl: map['progressMl'] as int,
-        kreatyna: map['kreatyna'] as bool? ?? false,
+        dateKey: map['dateKey']?.toString() ?? '',
+        progressMl: _asInt(map['progressMl']),
+        kreatyna: map['kreatyna'] == true,
       );
+}
+
+int _asInt(dynamic value, [int fallback = 0]) {
+  if (value is int) return value;
+  if (value is double) return value.round();
+  if (value is num) return value.toInt();
+  return fallback;
 }

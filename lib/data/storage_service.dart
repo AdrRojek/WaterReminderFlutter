@@ -1,4 +1,7 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants.dart';
 import '../models/app_settings.dart';
@@ -10,29 +13,101 @@ class StorageService {
   StorageService._();
   static final instance = StorageService._();
 
-  Box<Map>? _waterBox;
-  Box<Map>? _completionBox;
-  Box<Map>? _boilerBox;
-  Box<Map>? _settingsBox;
+  SharedPreferences? _prefs;
+
+  static const _waterKey = 'water_entries_v1';
+  static const _completionKey = 'daily_completions_v1';
+  static const _boilerKey = 'boiler_v1';
+  static const _settingsKey = 'settings_v1';
+  static const _scheduleDateKey = 'schedule_date_v1';
+  static const _scheduleRedistributedKey = 'schedule_redistributed_v1';
+  static const _activeScheduleKey = 'active_schedule_v1';
 
   Future<void> openBoxes() async {
-    _waterBox ??= await Hive.openBox<Map>(AppConstants.waterBoxName);
-    _completionBox ??=
-        await Hive.openBox<Map>(AppConstants.completionBoxName);
-    _boilerBox ??= await Hive.openBox<Map>(AppConstants.boilerBoxName);
-    _settingsBox ??= await Hive.openBox<Map>(AppConstants.settingsBoxName);
+    _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  Future<void> resetAll() async {
+    await openBoxes();
+    await _prefs!.remove(_waterKey);
+    await _prefs!.remove(_completionKey);
+    await _prefs!.remove(_boilerKey);
+    await _prefs!.remove(_settingsKey);
+    await _prefs!.remove(_scheduleDateKey);
+    await _prefs!.remove(_scheduleRedistributedKey);
+    await _prefs!.remove(_activeScheduleKey);
+  }
+
+  String? getScheduleDateKey() => _prefs?.getString(_scheduleDateKey);
+
+  bool isScheduleRedistributed() =>
+      _prefs?.getBool(_scheduleRedistributedKey) ?? false;
+
+  Future<void> setScheduleState({
+    required String dateKey,
+    required bool redistributed,
+    List<Map<String, dynamic>>? activeSchedule,
+  }) async {
+    await openBoxes();
+    await _prefs!.setString(_scheduleDateKey, dateKey);
+    await _prefs!.setBool(_scheduleRedistributedKey, redistributed);
+    if (activeSchedule != null) {
+      await _prefs!.setString(_activeScheduleKey, jsonEncode(activeSchedule));
+    } else if (!redistributed) {
+      await _prefs!.remove(_activeScheduleKey);
+    }
+  }
+
+  List<Map<String, dynamic>> getActiveScheduleMaps() {
+    if (_prefs == null) return [];
+    final raw = _prefs!.getString(_activeScheduleKey);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .whereType<Map>()
+            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('Active schedule decode error: $e');
+    }
+    return [];
+  }
+
+  Map<String, dynamic> _decodeMap(String? raw) {
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return decoded.map((k, v) => MapEntry(k.toString(), v));
+      }
+    } catch (e) {
+      debugPrint('JSON decode error: $e');
+    }
+    return {};
+  }
+
+  Future<void> _encodeMap(String key, Map<String, dynamic> map) async {
+    await _prefs!.setString(key, jsonEncode(map));
   }
 
   List<WaterDayEntry> getAllWaterEntries() {
-    return _waterBox!.values
+    if (_prefs == null) return [];
+    final map = _decodeMap(_prefs!.getString(_waterKey));
+    return map.values
+        .whereType<Map>()
         .map((e) => WaterDayEntry.fromMap(e))
         .toList()
       ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
   }
 
   WaterDayEntry? getEntryForDate(String dateKey) {
-    final data = _waterBox!.get(dateKey);
-    if (data == null) return null;
+    if (_prefs == null) return null;
+    final map = _decodeMap(_prefs!.getString(_waterKey));
+    final data = map[dateKey];
+    if (data is! Map) return null;
     return WaterDayEntry.fromMap(data);
   }
 
@@ -45,45 +120,70 @@ class StorageService {
   }
 
   Future<void> saveWaterEntry(WaterDayEntry entry) async {
-    await _waterBox!.put(entry.dateKey, entry.toMap());
+    await openBoxes();
+    final map = _decodeMap(_prefs!.getString(_waterKey));
+    map[entry.dateKey] = entry.toMap();
+    await _encodeMap(_waterKey, map);
   }
 
   List<DailyCompletion> getAllCompletions() {
-    return _completionBox!.values
+    if (_prefs == null) return [];
+    final map = _decodeMap(_prefs!.getString(_completionKey));
+    return map.values
+        .whereType<Map>()
         .map((e) => DailyCompletion.fromMap(e))
         .toList()
       ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
   }
 
   DailyCompletion? getCompletionForDate(String dateKey) {
-    final data = _completionBox!.get(dateKey);
-    if (data == null) return null;
+    if (_prefs == null) return null;
+    final map = _decodeMap(_prefs!.getString(_completionKey));
+    final data = map[dateKey];
+    if (data is! Map) return null;
     return DailyCompletion.fromMap(data);
   }
 
   Future<void> saveCompletion(DailyCompletion completion) async {
-    await _completionBox!.put(completion.dateKey, completion.toMap());
+    await openBoxes();
+    final map = _decodeMap(_prefs!.getString(_completionKey));
+    map[completion.dateKey] = completion.toMap();
+    await _encodeMap(_completionKey, map);
   }
 
   BoilerState getBoiler() {
-    final data = _boilerBox!.get('state');
-    if (data == null) {
+    if (_prefs == null) {
       return BoilerState(amountMl: AppConstants.boilerCapacityMl);
     }
-    return BoilerState.fromMap(data);
+    final raw = _prefs!.getString(_boilerKey);
+    if (raw == null) {
+      return BoilerState(amountMl: AppConstants.boilerCapacityMl);
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return BoilerState.fromMap(decoded);
+    } catch (_) {}
+    return BoilerState(amountMl: AppConstants.boilerCapacityMl);
   }
 
   Future<void> saveBoiler(BoilerState boiler) async {
-    await _boilerBox!.put('state', boiler.toMap());
+    await openBoxes();
+    await _prefs!.setString(_boilerKey, jsonEncode(boiler.toMap()));
   }
 
   AppSettings getSettings() {
-    final data = _settingsBox!.get('settings');
-    if (data == null) return AppSettings();
-    return AppSettings.fromMap(data);
+    if (_prefs == null) return AppSettings();
+    final raw = _prefs!.getString(_settingsKey);
+    if (raw == null) return AppSettings();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return AppSettings.fromMap(decoded);
+    } catch (_) {}
+    return AppSettings();
   }
 
   Future<void> saveSettings(AppSettings settings) async {
-    await _settingsBox!.put('settings', settings.toMap());
+    await openBoxes();
+    await _prefs!.setString(_settingsKey, jsonEncode(settings.toMap()));
   }
 }

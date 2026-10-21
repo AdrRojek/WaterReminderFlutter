@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 class StreakBadge extends StatelessWidget {
   const StreakBadge({super.key, required this.streak});
 
@@ -7,7 +9,10 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final hot = streak > 3;
+    final label =
+        streak == 1 ? l10n.streakOne(streak) : l10n.streakMany(streak);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -37,7 +42,7 @@ class StreakBadge extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            '$streak ${streak == 1 ? 'dzień' : 'dni'} z rzędu',
+            label,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,

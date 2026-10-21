@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import '../core/constants.dart';
+import '../core/locale_resolver.dart';
 import '../data/storage_service.dart';
 import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
@@ -59,6 +60,9 @@ class WaterRepository extends ChangeNotifier {
     await _storage.saveWaterEntry(entry);
     await _updateCompletion(key, entry.progressMl);
     _reload();
+    if (key == todayKey) {
+      await _refreshNotificationsForToday();
+    }
   }
 
   Future<void> subtractWater(int amountMl, {String? dateKey}) async {
@@ -68,6 +72,9 @@ class WaterRepository extends ChangeNotifier {
     await _storage.saveWaterEntry(entry);
     await _updateCompletion(key, entry.progressMl);
     _reload();
+    if (key == todayKey) {
+      await _refreshNotificationsForToday();
+    }
   }
 
   Future<void> resetToday() async {
@@ -77,6 +84,7 @@ class WaterRepository extends ChangeNotifier {
     await _storage.saveWaterEntry(entry);
     await _updateCompletion(todayKey, 0);
     _reload();
+    await _refreshNotificationsForToday();
   }
 
   Future<void> toggleKreatyna() async {
@@ -175,30 +183,84 @@ class WaterRepository extends ChangeNotifier {
   int recommendedMlNow() =>
       ScheduleCalculator.recommendedMlAt(DateTime.now(), portionMl: _settings.portionMl);
 
-  Future<void> scheduleDefaultNotifications() async {
+  void _bindNotificationL10n() {
+    NotificationService.instance.useLocalizations(l10nForSettings(_settings));
+  }
+
+  /// Codziennie 9:00–21:00, chyba że dziś już przeliczono „od teraz”.
+  Future<void> ensureDailySchedule({bool forceDefault = false}) async {
     if (!_settings.notificationsEnabled) return;
-    final now = DateTime.now();
-    final day = now.hour >= AppConstants.dayEndHour
-        ? now.add(const Duration(days: 1))
-        : now;
 
-    final schedule = ScheduleCalculator.defaultDailySchedule(
-      day: day,
-      portionMl: _settings.portionMl,
-    ).where((r) => r.time.isAfter(now)).toList();
+    final today = todayKey;
+    final scheduleDate = _storage.getScheduleDateKey();
+    final redistributed = _storage.isScheduleRedistributed();
 
-    await NotificationService.instance.scheduleReminders(schedule);
-    if (_settings.nightNotificationEnabled) {
-      await NotificationService.instance.scheduleNightNotification(day);
+    if (forceDefault || scheduleDate != today) {
+      await scheduleDefaultNotifications();
+      return;
+    }
+
+    if (redistributed) {
+      await _rescheduleRedistributedKeepingProgress();
+    } else {
+      await scheduleDefaultNotifications();
     }
   }
 
-  /// Wywoływane po kliknięciu powiadomienia nocnego — przelicza harmonogram.
-  Future<void> handleNightWakeUp() async {
+  Future<void> _refreshNotificationsForToday() async {
+    if (!_settings.notificationsEnabled) return;
+    try {
+      await ensureDailySchedule();
+    } catch (e) {
+      debugPrint('Notification refresh: $e');
+    }
+  }
+
+  Future<void> scheduleDefaultNotifications() async {
+    if (!_settings.notificationsEnabled) return;
+    _bindNotificationL10n();
+
     final now = DateTime.now();
+    final progress = todayProgress;
+    final planDay = now.hour >= AppConstants.dayEndHour
+        ? DateTime(now.year, now.month, now.day).add(const Duration(days: 1))
+        : DateTime(now.year, now.month, now.day);
+
+    // Po 21:00 planujemy jutrzejszy standardowy dzień (0 ml postępu).
+    final progressForPlan =
+        _dateKey(planDay) == todayKey ? progress : 0;
+
+    final schedule = ScheduleCalculator.defaultDailySchedule(
+      day: planDay,
+      portionMl: _settings.portionMl,
+    );
+
+    await NotificationService.instance.scheduleReminders(
+      schedule,
+      currentProgressMl: progressForPlan,
+      dailyGoalMl: _settings.dailyGoalMl,
+    );
+
+    if (_settings.nightNotificationEnabled) {
+      await NotificationService.instance.scheduleNightNotification(planDay);
+    }
+
+    await NotificationService.instance.scheduleMidnightReset();
+    await _storage.setScheduleState(
+      dateKey: todayKey,
+      redistributed: false,
+      activeSchedule: null,
+    );
+  }
+
+  /// Kliknięcie o dowolnej godzinie (np. 15:00) — równe odstępy do 21:00.
+  Future<void> handleNightWakeUp() async {
+    _bindNotificationL10n();
+    final now = DateTime.now();
+    final progress = todayProgress;
     final schedule = ScheduleCalculator.redistributeFromWakeUp(
       now: now,
-      currentProgressMl: todayProgress,
+      currentProgressMl: progress,
       dailyGoalMl: _settings.dailyGoalMl,
       portionMl: _settings.portionMl,
     );
@@ -206,8 +268,75 @@ class WaterRepository extends ChangeNotifier {
     await NotificationService.instance.scheduleReminders(
       schedule,
       replaceExisting: true,
+      currentProgressMl: progress,
+      dailyGoalMl: _settings.dailyGoalMl,
+    );
+
+    if (_settings.nightNotificationEnabled) {
+      await NotificationService.instance.scheduleNightNotification(now);
+    }
+    await NotificationService.instance.scheduleMidnightReset();
+    await _storage.setScheduleState(
+      dateKey: todayKey,
+      redistributed: true,
+      activeSchedule: schedule.map(_reminderToMap).toList(),
     );
     notifyListeners();
+  }
+
+  /// Trzyma godziny z kliknięcia (np. 15:00), tylko odcina już wypite sloty.
+  Future<void> _rescheduleRedistributedKeepingProgress() async {
+    _bindNotificationL10n();
+    final now = DateTime.now();
+    final progress = todayProgress;
+    final saved = _storage.getActiveScheduleMaps();
+    var schedule = saved.map(_reminderFromMap).whereType<ScheduledReminder>().toList();
+
+    if (schedule.isEmpty) {
+      schedule = ScheduleCalculator.redistributeFromWakeUp(
+        now: now,
+        currentProgressMl: progress,
+        dailyGoalMl: _settings.dailyGoalMl,
+        portionMl: _settings.portionMl,
+      );
+    }
+
+    await NotificationService.instance.scheduleReminders(
+      schedule,
+      replaceExisting: true,
+      currentProgressMl: progress,
+      dailyGoalMl: _settings.dailyGoalMl,
+    );
+
+    if (_settings.nightNotificationEnabled) {
+      await NotificationService.instance.scheduleNightNotification(now);
+    }
+    await NotificationService.instance.scheduleMidnightReset();
+    await _storage.setScheduleState(
+      dateKey: todayKey,
+      redistributed: true,
+      activeSchedule: schedule.map(_reminderToMap).toList(),
+    );
+  }
+
+  Map<String, dynamic> _reminderToMap(ScheduledReminder reminder) => {
+        'time': reminder.time.toIso8601String(),
+        'portionMl': reminder.portionMl,
+        'cumulativeMl': reminder.cumulativeMl,
+        'isNightWake': reminder.isNightWake,
+      };
+
+  ScheduledReminder? _reminderFromMap(Map<String, dynamic> map) {
+    final rawTime = map['time'];
+    if (rawTime is! String) return null;
+    final time = DateTime.tryParse(rawTime);
+    if (time == null) return null;
+    return ScheduledReminder(
+      time: time,
+      portionMl: (map['portionMl'] as num?)?.toInt() ?? _settings.portionMl,
+      cumulativeMl: (map['cumulativeMl'] as num?)?.toInt() ?? 0,
+      isNightWake: map['isNightWake'] == true,
+    );
   }
 
   Future<void> _updateCompletion(String dateKey, int progressMl) async {

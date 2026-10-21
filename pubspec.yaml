@@ -1,7 +1,7 @@
 name: water_reminder
 description: "Przypomnienia o piciu wody — rozbudowana wersja Flutter."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.2+3
 
 environment:
   sdk: ^3.9.2
@@ -9,13 +9,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
-  hive_flutter: ^1.1.0
+  shared_preferences: ^2.5.5
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
-  intl: ^0.20.2
-  google_fonts: ^6.2.1
+  flutter_timezone: ^4.1.0
+  intl: any
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +26,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true

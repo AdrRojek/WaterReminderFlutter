@@ -1,190 +1,186 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 
-/// Kołowy wybór ilości ml z podglądem wybranej wartości i szybkimi skrótami.
+/// Quick presets 250–2000 ml + custom amount field.
 class AmountPicker extends StatefulWidget {
   const AmountPicker({
     super.key,
     required this.value,
     required this.onChanged,
-    this.values,
-    this.quickValues = const [250, 500, 750, 1000],
-    this.labelBuilder,
+    this.presets = const [250, 500, 750, 1000, 1250, 1500, 1750, 2000],
+    this.maxMl = 10000,
+    this.allowZero = false,
+    this.valueLabel,
   });
 
   final int value;
   final ValueChanged<int> onChanged;
-  final List<int>? values;
-  final List<int> quickValues;
-  final String Function(int value)? labelBuilder;
+  final List<int> presets;
+  final int maxMl;
+  final bool allowZero;
+  final String Function(int value)? valueLabel;
 
   @override
   State<AmountPicker> createState() => _AmountPickerState();
 }
 
 class _AmountPickerState extends State<AmountPicker> {
-  late final List<int> _values;
-  late FixedExtentScrollController _controller;
+  late final TextEditingController _controller;
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _values = widget.values ??
-        List.generate(20, (index) => (index + 1) * 50);
-    final initialIndex = _values.indexOf(widget.value);
-    _controller = FixedExtentScrollController(
-      initialItem: initialIndex >= 0 ? initialIndex : 0,
-    );
+    _controller = TextEditingController(text: '${widget.value}');
+  }
+
+  @override
+  void didUpdateWidget(AmountPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_focusNode.hasFocus) {
+      _controller.text = '${widget.value}';
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  String _label(int v) => widget.labelBuilder?.call(v) ?? '$v ml';
+  String _displayLabel(int v) => widget.valueLabel?.call(v) ?? '$v ml';
 
-  void _select(int index) {
-    final v = _values[index];
-    widget.onChanged(v);
-    _controller.animateToItem(
-      index,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-    );
+  void _setValue(int v) {
+    final min = widget.allowZero ? 0 : 1;
+    final clamped = v.clamp(min, widget.maxMl);
+    widget.onChanged(clamped);
+    if (!_focusNode.hasFocus) {
+      _controller.text = '$clamped';
+    }
+  }
+
+  void _onTextChanged(String text) {
+    final parsed = int.tryParse(text);
+    if (parsed == null) return;
+    final min = widget.allowZero ? 0 : 1;
+    widget.onChanged(parsed.clamp(min, widget.maxMl));
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isPreset = widget.presets.contains(widget.value);
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          decoration: BoxDecoration(
-            color: AppTheme.primary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.primary.withValues(alpha: 0.35),
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                'Wybrano',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _label(widget.value),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.primary,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          alignment: WrapAlignment.center,
           children: [
-            for (final quick in widget.quickValues)
-              if (_values.contains(quick))
-                ChoiceChip(
-                  label: Text(_label(quick)),
-                  selected: widget.value == quick,
-                  onSelected: (_) => _select(_values.indexOf(quick)),
-                  selectedColor: AppTheme.primary.withValues(alpha: 0.25),
-                  labelStyle: TextStyle(
-                    fontWeight: widget.value == quick
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: widget.value == quick
-                        ? AppTheme.primary
-                        : Colors.white70,
-                  ),
-                  side: BorderSide(
-                    color: widget.value == quick
-                        ? AppTheme.primary
-                        : Colors.white24,
-                  ),
-                ),
+            for (final preset in widget.presets)
+              _PresetChip(
+                label: _displayLabel(preset),
+                selected: widget.value == preset,
+                onTap: () => _setValue(preset),
+              ),
           ],
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 160,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              ListWheelScrollView.useDelegate(
-                controller: _controller,
-                itemExtent: 44,
-                diameterRatio: 1.4,
-                perspective: 0.003,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: (index) {
-                  widget.onChanged(_values[index]);
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: _values.length,
-                  builder: (context, index) {
-                    final v = _values[index];
-                    final selected = v == widget.value;
-                    return GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _select(index),
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 150),
-                          style: TextStyle(
-                            fontSize: selected ? 24 : 17,
-                            fontWeight:
-                                selected ? FontWeight.w800 : FontWeight.w400,
-                            color: selected
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.35),
-                          ),
-                          child: Text(_label(v)),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            labelText: l10n.customAmountMl,
+            hintText: l10n.customAmountHint,
+            suffixText: 'ml',
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.06),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.12),
               ),
-              IgnorePointer(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: AppTheme.primary.withValues(alpha: 0.45),
-                          ),
-                          bottom: BorderSide(
-                            color: AppTheme.primary.withValues(alpha: 0.45),
-                          ),
-                        ),
-                        color: AppTheme.primary.withValues(alpha: 0.06),
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.12),
               ),
-            ],
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+            ),
+          ),
+          onChanged: _onTextChanged,
+        ),
+        if (!isPreset && widget.value > 0) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.selectedAmount(_displayLabel(widget.value)),
+            style: const TextStyle(
+              color: AppTheme.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  const _PresetChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppTheme.primary
+                : Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? AppTheme.primary
+                  : Colors.white.withValues(alpha: 0.15),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.75),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

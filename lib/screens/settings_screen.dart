@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants.dart';
 import '../core/theme.dart';
-import '../models/app_settings.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
 import '../services/notification_service.dart';
+import '../widgets/app_toast.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -19,15 +20,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final repo = ref.watch(waterRepositoryProvider);
     final settings = repo.settings;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ustawienia')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _SectionTitle(title: 'Cele'),
+          _SectionTitle(title: l10n.sectionGoals),
           ListTile(
-            title: const Text('Dzienny cel'),
+            title: Text(l10n.dailyGoal),
             subtitle: Text('${settings.dailyGoalMl} ml'),
             trailing: SizedBox(
               width: 120,
@@ -38,19 +40,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 divisions: 16,
                 label: '${settings.dailyGoalMl} ml',
                 onChanged: (v) async {
-                  final updated = AppSettings(
-                    dailyGoalMl: v.round(),
-                    portionMl: settings.portionMl,
-                    notificationsEnabled: settings.notificationsEnabled,
-                    nightNotificationEnabled: settings.nightNotificationEnabled,
+                  await repo.updateSettings(
+                    settings.copyWith(dailyGoalMl: v.round()),
                   );
-                  await repo.updateSettings(updated);
                 },
               ),
             ),
           ),
           ListTile(
-            title: const Text('Porcja'),
+            title: Text(l10n.portion),
             subtitle: Text('${settings.portionMl} ml'),
             trailing: SizedBox(
               width: 120,
@@ -61,31 +59,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 divisions: 8,
                 label: '${settings.portionMl} ml',
                 onChanged: (v) async {
-                  final updated = AppSettings(
-                    dailyGoalMl: settings.dailyGoalMl,
-                    portionMl: v.round(),
-                    notificationsEnabled: settings.notificationsEnabled,
-                    nightNotificationEnabled: settings.nightNotificationEnabled,
+                  await repo.updateSettings(
+                    settings.copyWith(portionMl: v.round()),
                   );
-                  await repo.updateSettings(updated);
                 },
               ),
             ),
           ),
           const SizedBox(height: 16),
-          _SectionTitle(title: 'Powiadomienia'),
+          _SectionTitle(title: l10n.sectionLanguage),
+          ListTile(
+            title: Text(l10n.language),
+            subtitle: Text(_languageLabel(l10n, settings.localeCode)),
+            trailing: DropdownButton<String>(
+              value: settings.localeCode,
+              underline: const SizedBox.shrink(),
+              items: [
+                DropdownMenuItem(
+                  value: 'system',
+                  child: Text(l10n.languageSystem),
+                ),
+                DropdownMenuItem(
+                  value: 'en',
+                  child: Text(l10n.languageEnglish),
+                ),
+                DropdownMenuItem(
+                  value: 'pl',
+                  child: Text(l10n.languagePolish),
+                ),
+              ],
+              onChanged: (code) async {
+                if (code == null) return;
+                await repo.updateSettings(settings.copyWith(localeCode: code));
+                if (settings.notificationsEnabled) {
+                  await repo.ensureDailySchedule();
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SectionTitle(title: l10n.sectionNotifications),
           SwitchListTile(
-            title: const Text('Przypomnienia dzienne'),
-            subtitle: const Text('9:00–21:00 co ~50 min'),
+            title: Text(l10n.dailyReminders),
+            subtitle: Text(l10n.dailyRemindersSubtitle),
             value: settings.notificationsEnabled,
             onChanged: (v) async {
-              final updated = AppSettings(
-                dailyGoalMl: settings.dailyGoalMl,
-                portionMl: settings.portionMl,
-                notificationsEnabled: v,
-                nightNotificationEnabled: settings.nightNotificationEnabled,
+              await repo.updateSettings(
+                settings.copyWith(notificationsEnabled: v),
               );
-              await repo.updateSettings(updated);
               if (v) {
                 await repo.scheduleDefaultNotifications();
               } else {
@@ -95,46 +116,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           SwitchListTile(
-            title: const Text('Powiadomienie nocne'),
+            title: Text(l10n.nightNotification),
             subtitle: Text(
-              'O ${AppConstants.nightNotificationHour}:00 — przelicza harmonogram po kliknięciu',
+              l10n.nightNotificationSubtitle(AppConstants.nightNotificationHour),
             ),
             value: settings.nightNotificationEnabled,
             onChanged: (v) async {
-              final updated = AppSettings(
-                dailyGoalMl: settings.dailyGoalMl,
-                portionMl: settings.portionMl,
-                notificationsEnabled: settings.notificationsEnabled,
-                nightNotificationEnabled: v,
+              await repo.updateSettings(
+                settings.copyWith(nightNotificationEnabled: v),
               );
-              await repo.updateSettings(updated);
               await repo.scheduleDefaultNotifications();
             },
           ),
           const SizedBox(height: 16),
-          _SectionTitle(title: 'Test'),
+          _SectionTitle(title: l10n.sectionSchedule),
           ListTile(
-            title: const Text('Przelicz harmonogram teraz'),
-            subtitle: const Text('Symuluje kliknięcie powiadomienia nocnego'),
-            trailing: const Icon(Icons.nightlight_round),
+            title: Text(l10n.rescheduleFromNow),
+            subtitle: Text(l10n.rescheduleFromNowSubtitle),
+            trailing: const Icon(Icons.schedule_rounded),
             onTap: () async {
               await repo.handleNightWakeUp();
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Harmonogram przeliczony na resztę dnia'),
-                  ),
+                AppToast.show(
+                  context,
+                  l10n.toastScheduleRedistributed,
+                  tone: AppToastTone.info,
+                  icon: Icons.schedule_rounded,
                 );
               }
             },
           ),
           ListTile(
-            title: const Text('Zaplanuj powiadomienia od nowa'),
+            title: Text(l10n.resetStandardDay),
+            subtitle: Text(l10n.resetStandardDaySubtitle),
+            trailing: const Icon(Icons.refresh_rounded),
             onTap: () async {
-              await repo.scheduleDefaultNotifications();
+              await repo.ensureDailySchedule(forceDefault: true);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Powiadomienia zaplanowane')),
+                AppToast.show(
+                  context,
+                  l10n.toastScheduleReset,
+                  tone: AppToastTone.success,
+                  icon: Icons.refresh_rounded,
                 );
               }
             },
@@ -142,6 +165,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  String _languageLabel(AppLocalizations l10n, String code) {
+    switch (code) {
+      case 'pl':
+        return l10n.languagePolish;
+      case 'system':
+        return l10n.languageSystem;
+      case 'en':
+      default:
+        return l10n.languageEnglish;
+    }
   }
 }
 

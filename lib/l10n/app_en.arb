@@ -1,0 +1,149 @@
+{
+  "@@locale": "en",
+  "appTitle": "Water Reminder",
+  "settings": "Settings",
+  "initError": "Startup error: {error}",
+  "@initError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "goalReached": "Nice! Goal reached",
+  "remainingMl": "{amount} ml left",
+  "@remainingMl": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "recommendation": "Suggested: {amount} ml",
+  "@recommendation": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "history": "History",
+  "recentDays": "recent days",
+  "noHistory": "No history yet",
+  "undo": "Undo",
+  "pastDay": "Past day",
+  "creatine": "Creatine",
+  "creatineTaken": "Taken",
+  "toastCreatineOn": "Creatine marked as taken today",
+  "toastCreatineOff": "Creatine unmarked",
+  "toastScheduleRedistributed": "Rescheduled from now until 9 PM — tomorrow back to 9 AM–9 PM",
+  "toastScheduleReset": "Restored the standard 9 AM–9 PM schedule",
+  "streakOne": "{count} day streak",
+  "@streakOne": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "streakMany": "{count} day streak",
+  "@streakMany": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "ofGoalMl": "of {goal} ml",
+  "@ofGoalMl": {
+    "placeholders": {
+      "goal": {"type": "int"}
+    }
+  },
+  "boilerPortion": "Boiler {amount} ml",
+  "@boilerPortion": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "boilerRemaining": "{amount} ml left",
+  "@boilerRemaining": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "refillBoiler": "Refill boiler",
+  "refillBoilerSubtitle": "Empty — tap to fill up",
+  "sectionGoals": "Goals",
+  "dailyGoal": "Daily goal",
+  "portion": "Portion",
+  "sectionNotifications": "Notifications",
+  "dailyReminders": "Daily reminders",
+  "dailyRemindersSubtitle": "9:00–21:00 about every 50 min",
+  "nightNotification": "Night notification",
+  "nightNotificationSubtitle": "At {hour}:00 — tap to rebuild today’s schedule",
+  "@nightNotificationSubtitle": {
+    "placeholders": {
+      "hour": {"type": "int"}
+    }
+  },
+  "sectionSchedule": "Schedule",
+  "rescheduleFromNow": "Reschedule from now",
+  "rescheduleFromNowSubtitle": "e.g. at 3 PM — equal 250 ml gaps until 9 PM",
+  "resetStandardDay": "Reset to standard day",
+  "resetStandardDaySubtitle": "Back to 9:00–21:00 ~every 50 min",
+  "sectionLanguage": "Language",
+  "language": "App language",
+  "languageSystem": "System default",
+  "languageEnglish": "English",
+  "languagePolish": "Polish",
+  "howMuchToSubtract": "How much to subtract?",
+  "subtractMl": "Subtract {amount} ml",
+  "@subtractMl": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "plusBoiler": "+ boiler",
+  "resetBoiler": "Reset boiler",
+  "resetWholeDay": "Reset whole day",
+  "addWaterPastDay": "Add water to a past day",
+  "pickDay": "Pick a day",
+  "cancel": "Cancel",
+  "ok": "OK",
+  "change": "Change",
+  "useBoilerYesterday": "Use boiler (yesterday)",
+  "addMl": "Add {amount} ml",
+  "@addMl": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "customAmountMl": "Custom amount (ml)",
+  "customAmountHint": "e.g. 333",
+  "selectedAmount": "Selected: {label}",
+  "@selectedAmount": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "notifDrinkTitle": "Drink a glass of water",
+  "notifGoalReached": "Daily goal reached — {amount} ml",
+  "@notifGoalReached": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "notifDrinkBody": "You have {current} ml · drink {portion} ml · to slot goal ({time}): {toSlot} ml",
+  "@notifDrinkBody": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "portion": {"type": "int"},
+      "time": {"type": "String"},
+      "toSlot": {"type": "int"}
+    }
+  },
+  "notifChannelWater": "Water reminders",
+  "notifChannelWaterDesc": "Regular reminders to drink water",
+  "notifDrinkAction": "Drank 250 ml",
+  "notifNightTitle": "Rebuild schedule?",
+  "notifNightBody": "Tap — equal gaps from now until 9 PM (tomorrow 9 AM–9 PM again)",
+  "notifChannelNight": "Night notification",
+  "notifChannelNightDesc": "Wake-up and schedule rebuild",
+  "notifResetTitle": "New day",
+  "notifResetBody": "Your water reminder schedule was refreshed",
+  "notifChannelReset": "Schedule reset",
+  "notifChannelResetDesc": "Daily notification refresh"
+}
