@@ -145,5 +145,47 @@
   "notifResetTitle": "New day",
   "notifResetBody": "Your water reminder schedule was refreshed",
   "notifChannelReset": "Schedule reset",
-  "notifChannelResetDesc": "Daily notification refresh"
+  "notifChannelResetDesc": "Daily notification refresh",
+  "notifCreatineHint": "pair with creatine if not taken yet",
+  "notifDrinkCreatineTitle": "Water + creatine?",
+  "debtTitle": "Behind by {amount} ml",
+  "@debtTitle": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "debtSubtitle": "Catch up: {portions}×{portion} ml every ~{minutes} min until 9 PM",
+  "@debtSubtitle": {
+    "placeholders": {
+      "portions": {"type": "int"},
+      "portion": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "debtAction": "Rebuild from now",
+  "toastCatchUpApplied": "Catch-up schedule set until 9 PM",
+  "todayTags": "Today feels like…",
+  "todayTagsHint": "Pace nudge only — your goal stays the same",
+  "tagHot": "Hot day",
+  "tagTraining": "Training",
+  "tagRoughMorning": "Rough morning",
+  "sectionConfirm": "Confirm drinks",
+  "confirmDrinks": "Anti-mis-tap",
+  "confirmNone": "Off (tap adds water)",
+  "confirmHold": "Hold button",
+  "confirmShake": "Shake phone",
+  "confirmBoth": "Hold or shake",
+  "confirmHoldHint": "Hold ~0.8s",
+  "toastShakeLogged": "Shake logged +{amount} ml",
+  "@toastShakeLogged": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  },
+  "toastHoldLogged": "Logged +{amount} ml",
+  "@toastHoldLogged": {
+    "placeholders": {
+      "amount": {"type": "int"}
+    }
+  }
 }

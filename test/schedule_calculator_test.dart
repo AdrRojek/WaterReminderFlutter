@@ -60,7 +60,29 @@ void main() {
       expect(filtered, isEmpty);
     });
 
-    test('defaultDailySchedule has 16 reminders', () {
+    test('catchUpPlan returns null when on pace', () {
+    final plan = ScheduleCalculator.catchUpPlan(
+      now: DateTime(2026, 3, 15, 10, 0),
+      currentProgressMl: 500,
+      dailyGoalMl: 4000,
+      portionMl: 250,
+    );
+    expect(plan, isNull);
+  });
+
+  test('catchUpPlan appears when behind schedule', () {
+    final plan = ScheduleCalculator.catchUpPlan(
+      now: DateTime(2026, 3, 15, 15, 40),
+      currentProgressMl: 250,
+      dailyGoalMl: 4000,
+      portionMl: 250,
+    );
+    expect(plan, isNotNull);
+    expect(plan!.debtMl, greaterThanOrEqualTo(250));
+    expect(plan.portions, greaterThan(0));
+  });
+
+  test('defaultDailySchedule has 16 reminders', () {
       final schedule = ScheduleCalculator.defaultDailySchedule(
         day: DateTime(2026, 6, 11),
       );

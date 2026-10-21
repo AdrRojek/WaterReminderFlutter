@@ -6,11 +6,14 @@ import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
 import '../widgets/adjust_water_sheet.dart';
 import '../widgets/app_toast.dart';
+import '../widgets/catch_up_card.dart';
+import '../widgets/day_tags_row.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/history_list.dart';
 import '../widgets/past_day_sheet.dart';
 import '../widgets/progress_ring.dart';
 import '../widgets/quick_action_buttons.dart';
+import '../widgets/shake_drink_listener.dart';
 import '../widgets/streak_badge.dart';
 import 'settings_screen.dart';
 
@@ -82,8 +85,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             AppTheme.progressColor(progress.toDouble(), goal);
         final recommendedColor =
             AppTheme.recommendedColor(recommended, progress);
+        final catchUp = repo.catchUpPlanNow();
+        final requireHold = repo.settings.confirmHold;
+        final shakeEnabled = repo.settings.confirmShake;
 
-        return Scaffold(
+        Future<void> logPortion(
+          int amount, {
+          String? toast,
+        }) async {
+          await repo.addWater(amount);
+          if (!context.mounted || toast == null) return;
+          AppToast.show(
+            context,
+            toast,
+            tone: AppToastTone.success,
+            icon: Icons.water_drop_rounded,
+          );
+        }
+
+        return ShakeDrinkListener(
+          enabled: shakeEnabled,
+          onShake: () {
+            final amount = repo.settings.portionMl;
+            logPortion(amount, toast: l10n.toastShakeLogged(amount));
+          },
+          child: Scaffold(
           extendBody: true,
           extendBodyBehindAppBar: true,
           appBar: AppBar(
@@ -157,15 +183,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ],
                       ),
                     ),
+                    if (catchUp != null) ...[
+                      const SizedBox(height: 14),
+                      CatchUpCard(
+                        plan: catchUp,
+                        portionMl: repo.settings.portionMl,
+                        onApply: () async {
+                          await repo.applyCatchUpPlan();
+                          if (!context.mounted) return;
+                          AppToast.show(
+                            context,
+                            l10n.toastCatchUpApplied,
+                            tone: AppToastTone.info,
+                            icon: Icons.schedule_rounded,
+                          );
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    DayTagsRow(
+                      modifiers: repo.dayModifiers,
+                      onChanged: repo.updateDayModifiers,
+                    ),
                     const SizedBox(height: 20),
                     QuickActionButtons(
                       portionMl: repo.settings.portionMl,
                       boilerAmount: repo.boiler.amountMl,
-                      onAdd250: () => repo.addWater(repo.settings.portionMl),
-                      onAdd500: () =>
-                          repo.addWater(repo.settings.portionMl * 2),
-                      onBoiler250: () =>
-                          repo.useBoiler(repo.settings.portionMl),
+                      requireHold: requireHold,
+                      onAdd250: () => logPortion(
+                        repo.settings.portionMl,
+                        toast: requireHold
+                            ? l10n.toastHoldLogged(repo.settings.portionMl)
+                            : null,
+                      ),
+                      onAdd500: () => logPortion(
+                        repo.settings.portionMl * 2,
+                        toast: requireHold
+                            ? l10n.toastHoldLogged(
+                                repo.settings.portionMl * 2,
+                              )
+                            : null,
+                      ),
+                      onBoiler250: () async {
+                        await repo.useBoiler(repo.settings.portionMl);
+                        if (!context.mounted || !requireHold) return;
+                        AppToast.show(
+                          context,
+                          l10n.toastHoldLogged(repo.settings.portionMl),
+                          tone: AppToastTone.success,
+                        );
+                      },
                       onRefillBoiler: repo.refillBoiler,
                     ),
                     const SizedBox(height: 28),
@@ -216,6 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onUndo: () => showAdjustWaterSheet(context, repo),
             onCalendar: () => showPastDaySheet(context, repo),
           ),
+        ),
         );
       },
     );

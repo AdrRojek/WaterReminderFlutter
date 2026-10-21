@@ -535,6 +535,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily notification refresh'**
   String get notifChannelResetDesc;
+
+  /// No description provided for @notifCreatineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'pair with creatine if not taken yet'**
+  String get notifCreatineHint;
+
+  /// No description provided for @notifDrinkCreatineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Water + creatine?'**
+  String get notifDrinkCreatineTitle;
+
+  /// No description provided for @debtTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Behind by {amount} ml'**
+  String debtTitle(int amount);
+
+  /// No description provided for @debtSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch up: {portions}×{portion} ml every ~{minutes} min until 9 PM'**
+  String debtSubtitle(int portions, int portion, int minutes);
+
+  /// No description provided for @debtAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuild from now'**
+  String get debtAction;
+
+  /// No description provided for @toastCatchUpApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch-up schedule set until 9 PM'**
+  String get toastCatchUpApplied;
+
+  /// No description provided for @todayTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Today feels like…'**
+  String get todayTags;
+
+  /// No description provided for @todayTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace nudge only — your goal stays the same'**
+  String get todayTagsHint;
+
+  /// No description provided for @tagHot.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot day'**
+  String get tagHot;
+
+  /// No description provided for @tagTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get tagTraining;
+
+  /// No description provided for @tagRoughMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough morning'**
+  String get tagRoughMorning;
+
+  /// No description provided for @sectionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm drinks'**
+  String get sectionConfirm;
+
+  /// No description provided for @confirmDrinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Anti-mis-tap'**
+  String get confirmDrinks;
+
+  /// No description provided for @confirmNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Off (tap adds water)'**
+  String get confirmNone;
+
+  /// No description provided for @confirmHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold button'**
+  String get confirmHold;
+
+  /// No description provided for @confirmShake.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake phone'**
+  String get confirmShake;
+
+  /// No description provided for @confirmBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold or shake'**
+  String get confirmBoth;
+
+  /// No description provided for @confirmHoldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold ~0.8s'**
+  String get confirmHoldHint;
+
+  /// No description provided for @toastShakeLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Shake logged +{amount} ml'**
+  String toastShakeLogged(int amount);
+
+  /// No description provided for @toastHoldLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged +{amount} ml'**
+  String toastHoldLogged(int amount);
 }
 
 class _AppLocalizationsDelegate

@@ -257,4 +257,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifChannelResetDesc => 'Daily notification refresh';
+
+  @override
+  String get notifCreatineHint => 'pair with creatine if not taken yet';
+
+  @override
+  String get notifDrinkCreatineTitle => 'Water + creatine?';
+
+  @override
+  String debtTitle(int amount) {
+    return 'Behind by $amount ml';
+  }
+
+  @override
+  String debtSubtitle(int portions, int portion, int minutes) {
+    return 'Catch up: $portions×$portion ml every ~$minutes min until 9 PM';
+  }
+
+  @override
+  String get debtAction => 'Rebuild from now';
+
+  @override
+  String get toastCatchUpApplied => 'Catch-up schedule set until 9 PM';
+
+  @override
+  String get todayTags => 'Today feels like…';
+
+  @override
+  String get todayTagsHint => 'Pace nudge only — your goal stays the same';
+
+  @override
+  String get tagHot => 'Hot day';
+
+  @override
+  String get tagTraining => 'Training';
+
+  @override
+  String get tagRoughMorning => 'Rough morning';
+
+  @override
+  String get sectionConfirm => 'Confirm drinks';
+
+  @override
+  String get confirmDrinks => 'Anti-mis-tap';
+
+  @override
+  String get confirmNone => 'Off (tap adds water)';
+
+  @override
+  String get confirmHold => 'Hold button';
+
+  @override
+  String get confirmShake => 'Shake phone';
+
+  @override
+  String get confirmBoth => 'Hold or shake';
+
+  @override
+  String get confirmHoldHint => 'Hold ~0.8s';
+
+  @override
+  String toastShakeLogged(int amount) {
+    return 'Shake logged +$amount ml';
+  }
+
+  @override
+  String toastHoldLogged(int amount) {
+    return 'Logged +$amount ml';
+  }
 }

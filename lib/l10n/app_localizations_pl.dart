@@ -257,4 +257,72 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get notifChannelResetDesc => 'Codzienne odświeżenie powiadomień';
+
+  @override
+  String get notifCreatineHint => 'połącz z kreatyną, jeśli jeszcze nie wzięta';
+
+  @override
+  String get notifDrinkCreatineTitle => 'Woda + kreatyna?';
+
+  @override
+  String debtTitle(int amount) {
+    return 'Jesteś $amount ml w tyle';
+  }
+
+  @override
+  String debtSubtitle(int portions, int portion, int minutes) {
+    return 'Dogonienie: $portions×$portion ml co ~$minutes min do 21:00';
+  }
+
+  @override
+  String get debtAction => 'Przelicz od teraz';
+
+  @override
+  String get toastCatchUpApplied => 'Ustawiono doganianie do 21:00';
+
+  @override
+  String get todayTags => 'Dziś jest raczej…';
+
+  @override
+  String get todayTagsHint => 'Tylko tempo — cel litrowy bez zmian';
+
+  @override
+  String get tagHot => 'Gorąco';
+
+  @override
+  String get tagTraining => 'Trening';
+
+  @override
+  String get tagRoughMorning => 'Ciężki start';
+
+  @override
+  String get sectionConfirm => 'Potwierdzanie';
+
+  @override
+  String get confirmDrinks => 'Anti-przypadkowy tap';
+
+  @override
+  String get confirmNone => 'Wyłączone (tap dodaje)';
+
+  @override
+  String get confirmHold => 'Przytrzymaj przycisk';
+
+  @override
+  String get confirmShake => 'Potrząśnij telefonem';
+
+  @override
+  String get confirmBoth => 'Hold albo shake';
+
+  @override
+  String get confirmHoldHint => 'Przytrzymaj ~0,8 s';
+
+  @override
+  String toastShakeLogged(int amount) {
+    return 'Shake: +$amount ml';
+  }
+
+  @override
+  String toastHoldLogged(int amount) {
+    return 'Zapisano +$amount ml';
+  }
 }

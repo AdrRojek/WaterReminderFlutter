@@ -7,6 +7,7 @@ import '../core/constants.dart';
 import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
 import '../models/daily_completion.dart';
+import '../models/day_modifiers.dart';
 import '../models/water_day_entry.dart';
 
 class StorageService {
@@ -22,6 +23,7 @@ class StorageService {
   static const _scheduleDateKey = 'schedule_date_v1';
   static const _scheduleRedistributedKey = 'schedule_redistributed_v1';
   static const _activeScheduleKey = 'active_schedule_v1';
+  static const _dayModifiersKey = 'day_modifiers_v1';
 
   Future<void> openBoxes() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -36,6 +38,22 @@ class StorageService {
     await _prefs!.remove(_scheduleDateKey);
     await _prefs!.remove(_scheduleRedistributedKey);
     await _prefs!.remove(_activeScheduleKey);
+    await _prefs!.remove(_dayModifiersKey);
+  }
+
+  DayModifiers getDayModifiers(String dateKey) {
+    if (_prefs == null) return const DayModifiers();
+    final map = _decodeMap(_prefs!.getString(_dayModifiersKey));
+    final data = map[dateKey];
+    if (data is Map) return DayModifiers.fromMap(data);
+    return const DayModifiers();
+  }
+
+  Future<void> saveDayModifiers(String dateKey, DayModifiers modifiers) async {
+    await openBoxes();
+    final map = _decodeMap(_prefs!.getString(_dayModifiersKey));
+    map[dateKey] = modifiers.toMap();
+    await _encodeMap(_dayModifiersKey, map);
   }
 
   String? getScheduleDateKey() => _prefs?.getString(_scheduleDateKey);

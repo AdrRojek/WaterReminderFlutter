@@ -170,21 +170,29 @@ class NotificationService {
       _plugin.getNotificationAppLaunchDetails();
 
   String _buildBody(
-    ScheduledReminder reminder,
-    int currentProgressMl,
-    int dailyGoalMl,
-  ) {
+    ScheduledReminder reminder, {
+    required int currentProgressMl,
+    required int dailyGoalMl,
+    required bool creatineTaken,
+  }) {
     if (currentProgressMl >= dailyGoalMl) {
       return _l10n.notifGoalReached(currentProgressMl);
     }
 
     final toSlot = reminder.cumulativeMl - currentProgressMl;
-    return _l10n.notifDrinkBody(
+    var body = _l10n.notifDrinkBody(
       currentProgressMl,
       reminder.portionMl,
       _formatTime(reminder.time),
       toSlot,
     );
+
+    // Creatine ritual: hint only until marked taken (morning window).
+    if (!creatineTaken && reminder.time.hour < 12) {
+      body = '$body · ${_l10n.notifCreatineHint}';
+    }
+
+    return body;
   }
 
   Future<void> scheduleReminders(
@@ -192,6 +200,7 @@ class NotificationService {
     bool replaceExisting = true,
     int currentProgressMl = 0,
     int dailyGoalMl = AppConstants.dailyGoalMl,
+    bool creatineTaken = true,
   }) async {
     await ensureInitialized();
     if (Platform.isAndroid) {
@@ -210,12 +219,19 @@ class NotificationService {
     ).where((reminder) => reminder.time.isAfter(now));
 
     for (final reminder in relevant) {
-      final body = _buildBody(reminder, currentProgressMl, dailyGoalMl);
+      final body = _buildBody(
+        reminder,
+        currentProgressMl: currentProgressMl,
+        dailyGoalMl: dailyGoalMl,
+        creatineTaken: creatineTaken,
+      );
 
       try {
         await _plugin.zonedSchedule(
           _notificationIdFor(reminder),
-          _l10n.notifDrinkTitle,
+          creatineTaken || reminder.time.hour >= 12
+              ? _l10n.notifDrinkTitle
+              : _l10n.notifDrinkCreatineTitle,
           body,
           _toZonedLocal(reminder.time),
           NotificationDetails(

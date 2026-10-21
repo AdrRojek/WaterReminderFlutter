@@ -1,6 +1,7 @@
 import '../core/constants.dart';
 
 /// Stored locale preference: `system`, `en`, or `pl`.
+/// confirmDrinkMode: `none` | `hold` | `shake` | `both`.
 class AppSettings {
   AppSettings({
     this.dailyGoalMl = AppConstants.dailyGoalMl,
@@ -8,6 +9,7 @@ class AppSettings {
     this.notificationsEnabled = true,
     this.nightNotificationEnabled = true,
     this.localeCode = 'en',
+    this.confirmDrinkMode = 'both',
   });
 
   int dailyGoalMl;
@@ -15,6 +17,12 @@ class AppSettings {
   bool notificationsEnabled;
   bool nightNotificationEnabled;
   String localeCode;
+  String confirmDrinkMode;
+
+  bool get confirmHold =>
+      confirmDrinkMode == 'hold' || confirmDrinkMode == 'both';
+  bool get confirmShake =>
+      confirmDrinkMode == 'shake' || confirmDrinkMode == 'both';
 
   AppSettings copyWith({
     int? dailyGoalMl,
@@ -22,6 +30,7 @@ class AppSettings {
     bool? notificationsEnabled,
     bool? nightNotificationEnabled,
     String? localeCode,
+    String? confirmDrinkMode,
   }) {
     return AppSettings(
       dailyGoalMl: dailyGoalMl ?? this.dailyGoalMl,
@@ -30,6 +39,7 @@ class AppSettings {
       nightNotificationEnabled:
           nightNotificationEnabled ?? this.nightNotificationEnabled,
       localeCode: localeCode ?? this.localeCode,
+      confirmDrinkMode: confirmDrinkMode ?? this.confirmDrinkMode,
     );
   }
 
@@ -39,6 +49,7 @@ class AppSettings {
         'notificationsEnabled': notificationsEnabled,
         'nightNotificationEnabled': nightNotificationEnabled,
         'localeCode': localeCode,
+        'confirmDrinkMode': confirmDrinkMode,
       };
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
@@ -47,7 +58,19 @@ class AppSettings {
         notificationsEnabled: map['notificationsEnabled'] != false,
         nightNotificationEnabled: map['nightNotificationEnabled'] != false,
         localeCode: _asLocaleCode(map['localeCode']),
+        confirmDrinkMode: _asConfirmMode(map['confirmDrinkMode']),
       );
+}
+
+String _asConfirmMode(dynamic value) {
+  if (value is String &&
+      (value == 'none' ||
+          value == 'hold' ||
+          value == 'shake' ||
+          value == 'both')) {
+    return value;
+  }
+  return 'both';
 }
 
 String _asLocaleCode(dynamic value) {

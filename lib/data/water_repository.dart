@@ -7,6 +7,7 @@ import '../data/storage_service.dart';
 import '../models/app_settings.dart';
 import '../models/boiler_state.dart';
 import '../models/daily_completion.dart';
+import '../models/day_modifiers.dart';
 import '../models/water_day_entry.dart';
 import '../services/notification_service.dart';
 import '../services/schedule_calculator.dart';
@@ -20,12 +21,14 @@ class WaterRepository extends ChangeNotifier {
   List<DailyCompletion> _completions = [];
   BoilerState _boiler = BoilerState(amountMl: AppConstants.boilerCapacityMl);
   AppSettings _settings = AppSettings();
+  DayModifiers _dayModifiers = const DayModifiers();
   bool _initialized = false;
 
   List<WaterDayEntry> get entries => List.unmodifiable(_entries);
   List<DailyCompletion> get completions => List.unmodifiable(_completions);
   BoilerState get boiler => _boiler;
   AppSettings get settings => _settings;
+  DayModifiers get dayModifiers => _dayModifiers;
   bool get isInitialized => _initialized;
 
   String get todayKey => _dateKey(DateTime.now());
@@ -49,6 +52,7 @@ class WaterRepository extends ChangeNotifier {
     _settings = _storage.getSettings();
     await _storage.getOrCreateToday(todayKey);
     _entries = _storage.getAllWaterEntries();
+    _dayModifiers = _storage.getDayModifiers(todayKey);
     _initialized = true;
     notifyListeners();
   }
@@ -92,7 +96,28 @@ class WaterRepository extends ChangeNotifier {
     entry.kreatyna = !entry.kreatyna;
     await _storage.saveWaterEntry(entry);
     _reload();
+    // Creatine taken → drop creatine hints from upcoming notifications.
+    await _refreshNotificationsForToday();
   }
+
+  Future<void> updateDayModifiers(DayModifiers modifiers) async {
+    _dayModifiers = modifiers;
+    await _storage.saveDayModifiers(todayKey, modifiers);
+    notifyListeners();
+  }
+
+  CatchUpPlan? catchUpPlanNow() {
+    return ScheduleCalculator.catchUpPlan(
+      now: DateTime.now(),
+      currentProgressMl: todayProgress,
+      dailyGoalMl: _settings.dailyGoalMl,
+      portionMl: _settings.portionMl,
+      paceNudgeMl: _dayModifiers.paceNudgeMl,
+    );
+  }
+
+  /// One-tap catch-up: equal gaps from now until 21:00 for remaining goal.
+  Future<void> applyCatchUpPlan() => handleNightWakeUp();
 
   Future<void> useBoiler(int amountMl) async {
     if (_boiler.amountMl < amountMl) return;
@@ -239,6 +264,7 @@ class WaterRepository extends ChangeNotifier {
       schedule,
       currentProgressMl: progressForPlan,
       dailyGoalMl: _settings.dailyGoalMl,
+      creatineTaken: isKreatynaToday,
     );
 
     if (_settings.nightNotificationEnabled) {
@@ -270,6 +296,7 @@ class WaterRepository extends ChangeNotifier {
       replaceExisting: true,
       currentProgressMl: progress,
       dailyGoalMl: _settings.dailyGoalMl,
+      creatineTaken: isKreatynaToday,
     );
 
     if (_settings.nightNotificationEnabled) {
@@ -306,6 +333,7 @@ class WaterRepository extends ChangeNotifier {
       replaceExisting: true,
       currentProgressMl: progress,
       dailyGoalMl: _settings.dailyGoalMl,
+      creatineTaken: isKreatynaToday,
     );
 
     if (_settings.nightNotificationEnabled) {

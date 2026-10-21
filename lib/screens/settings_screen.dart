@@ -98,6 +98,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _SectionTitle(title: l10n.sectionConfirm),
+          ListTile(
+            title: Text(l10n.confirmDrinks),
+            subtitle: Text(_confirmLabel(l10n, settings.confirmDrinkMode)),
+            trailing: DropdownButton<String>(
+              value: settings.confirmDrinkMode,
+              underline: const SizedBox.shrink(),
+              items: [
+                DropdownMenuItem(
+                  value: 'none',
+                  child: Text(l10n.confirmNone),
+                ),
+                DropdownMenuItem(
+                  value: 'hold',
+                  child: Text(l10n.confirmHold),
+                ),
+                DropdownMenuItem(
+                  value: 'shake',
+                  child: Text(l10n.confirmShake),
+                ),
+                DropdownMenuItem(
+                  value: 'both',
+                  child: Text(l10n.confirmBoth),
+                ),
+              ],
+              onChanged: (mode) async {
+                if (mode == null) return;
+                await repo.updateSettings(
+                  settings.copyWith(confirmDrinkMode: mode),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
           _SectionTitle(title: l10n.sectionNotifications),
           SwitchListTile(
             title: Text(l10n.dailyReminders),
@@ -176,6 +210,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       case 'en':
       default:
         return l10n.languageEnglish;
+    }
+  }
+
+  String _confirmLabel(AppLocalizations l10n, String mode) {
+    switch (mode) {
+      case 'hold':
+        return l10n.confirmHold;
+      case 'shake':
+        return l10n.confirmShake;
+      case 'both':
+        return l10n.confirmBoth;
+      case 'none':
+      default:
+        return l10n.confirmNone;
     }
   }
 }

@@ -139,4 +139,54 @@ class ScheduleCalculator {
         .where((reminder) => reminder.cumulativeMl > currentProgressMl)
         .toList();
   }
+
+  /// How far behind the schedule you are (optionally nudged by day tags).
+  static CatchUpPlan? catchUpPlan({
+    required DateTime now,
+    required int currentProgressMl,
+    required int dailyGoalMl,
+    int portionMl = AppConstants.portionMl,
+    int paceNudgeMl = 0,
+  }) {
+    final endOfDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      AppConstants.dayEndHour,
+      AppConstants.dayEndMinute,
+    );
+    if (!now.isBefore(endOfDay)) return null;
+    if (currentProgressMl >= dailyGoalMl) return null;
+
+    final recommended = recommendedMlAt(now, portionMl: portionMl);
+    final effectiveTarget = recommended + paceNudgeMl;
+    final debtMl = (effectiveTarget - currentProgressMl).clamp(0, dailyGoalMl);
+    if (debtMl < portionMl) return null;
+
+    final remainingMl = (dailyGoalMl - currentProgressMl).clamp(0, dailyGoalMl);
+    final portions = (remainingMl / portionMl).ceil();
+    final totalMinutes = endOfDay.difference(now).inMinutes;
+    if (portions <= 0 || totalMinutes <= 0) return null;
+
+    return CatchUpPlan(
+      debtMl: debtMl,
+      remainingMl: remainingMl,
+      portions: portions,
+      intervalMinutes: (totalMinutes / portions).round().clamp(1, totalMinutes),
+    );
+  }
+}
+
+class CatchUpPlan {
+  const CatchUpPlan({
+    required this.debtMl,
+    required this.remainingMl,
+    required this.portions,
+    required this.intervalMinutes,
+  });
+
+  final int debtMl;
+  final int remainingMl;
+  final int portions;
+  final int intervalMinutes;
 }
