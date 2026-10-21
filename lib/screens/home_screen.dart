@@ -214,30 +214,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         rewards: rewards,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: _KreatynaChip(
-                        active: repo.isKreatynaToday,
-                        onTap: () async {
-                          await repo.toggleKreatyna();
-                          if (!context.mounted) return;
-                          final taken =
-                              ref.read(waterRepositoryProvider).isKreatynaToday;
-                          AppToast.show(
-                            context,
-                            taken
-                                ? l10n.toastCreatineOn
-                                : l10n.toastCreatineOff,
-                            tone: taken
-                                ? AppToastTone.success
-                                : AppToastTone.info,
-                            icon: taken
-                                ? Icons.check_circle_rounded
-                                : Icons.medication_outlined,
-                          );
-                        },
-                      ),
-                    ),
                     const SizedBox(height: 20),
                     GlassCard(
                       padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
@@ -300,6 +276,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       portionMl: repo.settings.portionMl,
                       boilerAmount: repo.boiler.amountMl,
                       requireHold: requireHold,
+                      creatineActive: repo.isKreatynaToday,
+                      onCreatine: () async {
+                        await repo.toggleKreatyna();
+                        if (!context.mounted) return;
+                        final taken =
+                            ref.read(waterRepositoryProvider).isKreatynaToday;
+                        AppToast.show(
+                          context,
+                          taken
+                              ? l10n.toastCreatineOn
+                              : l10n.toastCreatineOff,
+                          tone: taken
+                              ? AppToastTone.success
+                              : AppToastTone.info,
+                          icon: taken
+                              ? Icons.check_circle_rounded
+                              : Icons.medication_outlined,
+                        );
+                      },
                       onAdd250: () => logPortion(
                         repo.settings.portionMl,
                         toast: requireHold
@@ -387,62 +382,5 @@ String _rewardTitle(AppLocalizations l10n, String id) {
       return l10n.rewardIronTitle;
     default:
       return id;
-  }
-}
-
-class _KreatynaChip extends StatelessWidget {
-  const _KreatynaChip({
-    required this.active,
-    required this.onTap,
-  });
-
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: active
-                ? const Color(0xFF43A047).withValues(alpha: 0.9)
-                : Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: active
-                  ? const Color(0xFF66BB6A)
-                  : Colors.white.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                active ? Icons.check_circle_rounded : Icons.medication_rounded,
-                size: 18,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                active ? l10n.creatineTaken : l10n.creatine,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

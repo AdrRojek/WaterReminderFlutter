@@ -63,7 +63,7 @@ class NotificationService {
       await _configureLocalTimezone();
 
       const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('@drawable/ic_stat_water');
 
       final iosSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
@@ -225,11 +225,54 @@ class NotificationService {
         ),
       ];
 
+  AndroidNotificationDetails _androidWaterDetails({
+    required List<AndroidNotificationAction> actions,
+  }) {
+    return AndroidNotificationDetails(
+      _waterChannelId,
+      _l10n.notifChannelWater,
+      channelDescription: _l10n.notifChannelWaterDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@drawable/ic_stat_water',
+      largeIcon: const DrawableResourceAndroidBitmap('ic_notification_large'),
+      actions: actions,
+    );
+  }
+
   DarwinNotificationDetails get _iosWaterDetails => DarwinNotificationDetails(
         presentAlert: true,
         presentSound: true,
         categoryIdentifier: _waterCategoryId,
       );
+
+  /// Debug: fire a sample reminder in [delay].
+  Future<void> scheduleTestNotification({
+    Duration delay = const Duration(minutes: 1),
+    int portionMl = AppConstants.portionMl,
+  }) async {
+    await ensureInitialized();
+    final when = DateTime.now().add(delay);
+    try {
+      await _plugin.zonedSchedule(
+        888001,
+        _l10n.notifDrinkTitle,
+        _l10n.notifTestBody,
+        _toZonedLocal(when),
+        NotificationDetails(
+          android: _androidWaterDetails(actions: _androidActions),
+          iOS: _iosWaterDetails,
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'water_$portionMl',
+      );
+    } catch (e) {
+      debugPrint('Failed to schedule test notification: $e');
+      rethrow;
+    }
+  }
 
   String _buildBody(
     ScheduledReminder reminder, {
@@ -296,14 +339,7 @@ class NotificationService {
           body,
           _toZonedLocal(reminder.time),
           NotificationDetails(
-            android: AndroidNotificationDetails(
-              _waterChannelId,
-              _l10n.notifChannelWater,
-              channelDescription: _l10n.notifChannelWaterDesc,
-              importance: Importance.high,
-              priority: Priority.high,
-              actions: _androidActions,
-            ),
+            android: _androidWaterDetails(actions: _androidActions),
             iOS: _iosWaterDetails,
           ),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -354,14 +390,7 @@ class NotificationService {
         ),
         _toZonedLocal(when),
         NotificationDetails(
-          android: AndroidNotificationDetails(
-            _waterChannelId,
-            _l10n.notifChannelWater,
-            channelDescription: _l10n.notifChannelWaterDesc,
-            importance: Importance.high,
-            priority: Priority.high,
-            actions: _androidActions,
-          ),
+          android: _androidWaterDetails(actions: _androidActions),
           iOS: _iosWaterDetails,
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

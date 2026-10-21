@@ -236,5 +236,10 @@
   "pastDaySettings": "Add water to a past day",
   "pastDaySettingsSubtitle": "Backfill yesterday or any earlier day",
   "openRewards": "Rewards & unlocks",
-  "openRewardsSubtitle": "Cosmetics you’ve earned"
+  "openRewardsSubtitle": "Cosmetics you’ve earned",
+  "creatineTapHint": "Tap to mark",
+  "testNotification": "Test notification (in 1 min)",
+  "testNotificationSubtitle": "Dev hidden — schedules a sample reminder",
+  "toastTestNotification": "Test notification in ~1 minute",
+  "notifTestBody": "Test ping — actions: water / boiler / quiet 20 min"
 }

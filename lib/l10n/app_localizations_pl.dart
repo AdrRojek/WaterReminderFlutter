@@ -446,4 +446,19 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get openRewardsSubtitle => 'Kosmetyki, które zdobyłeś';
+
+  @override
+  String get creatineTapHint => 'Kliknij, aby oznaczyć';
+
+  @override
+  String get testNotification => 'Test powiadomienia (za 1 min)';
+
+  @override
+  String get testNotificationSubtitle => 'Ukryte — przykładowe przypomnienie';
+
+  @override
+  String get toastTestNotification => 'Testowe powiadomienie za ~1 minutę';
+
+  @override
+  String get notifTestBody => 'Test — akcje: woda / bojler / cicho 20 min';
 }

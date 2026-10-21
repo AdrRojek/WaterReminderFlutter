@@ -129,5 +129,10 @@
   "pastDaySettings": "Dodaj wodę do poprzedniego dnia",
   "pastDaySettingsSubtitle": "Uzupełnij wczoraj lub dowolny wcześniejszy dzień",
   "openRewards": "Nagrody i odblokowania",
-  "openRewardsSubtitle": "Kosmetyki, które zdobyłeś"
+  "openRewardsSubtitle": "Kosmetyki, które zdobyłeś",
+  "creatineTapHint": "Kliknij, aby oznaczyć",
+  "testNotification": "Test powiadomienia (za 1 min)",
+  "testNotificationSubtitle": "Ukryte — przykładowe przypomnienie",
+  "toastTestNotification": "Testowe powiadomienie za ~1 minutę",
+  "notifTestBody": "Test — akcje: woda / bojler / cicho 20 min"
 }

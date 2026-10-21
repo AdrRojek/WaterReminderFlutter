@@ -443,4 +443,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openRewardsSubtitle => 'Cosmetics you’ve earned';
+
+  @override
+  String get creatineTapHint => 'Tap to mark';
+
+  @override
+  String get testNotification => 'Test notification (in 1 min)';
+
+  @override
+  String get testNotificationSubtitle =>
+      'Dev hidden — schedules a sample reminder';
+
+  @override
+  String get toastTestNotification => 'Test notification in ~1 minute';
+
+  @override
+  String get notifTestBody =>
+      'Test ping — actions: water / boiler / quiet 20 min';
 }

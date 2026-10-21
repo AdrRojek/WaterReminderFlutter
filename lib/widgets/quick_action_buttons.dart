@@ -12,6 +12,8 @@ class QuickActionButtons extends StatelessWidget {
     required this.boilerAmount,
     required this.onRefillBoiler,
     required this.portionMl,
+    required this.creatineActive,
+    required this.onCreatine,
     this.requireHold = false,
   });
 
@@ -19,8 +21,10 @@ class QuickActionButtons extends StatelessWidget {
   final VoidCallback onAdd500;
   final VoidCallback onBoiler250;
   final VoidCallback onRefillBoiler;
+  final VoidCallback onCreatine;
   final int boilerAmount;
   final int portionMl;
+  final bool creatineActive;
   final bool requireHold;
 
   @override
@@ -57,30 +61,50 @@ class QuickActionButtons extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        if (boilerAmount >= portionMl)
-          HoldActionTile(
-            icon: Icons.coffee_rounded,
-            label: l10n.boilerPortion(portionMl),
-            subtitle: l10n.boilerRemaining(boilerAmount),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+        Row(
+          children: [
+            Expanded(
+              child: boilerAmount >= portionMl
+                  ? HoldActionTile(
+                      icon: Icons.coffee_rounded,
+                      label: l10n.boilerPortion(portionMl),
+                      subtitle: l10n.boilerRemaining(boilerAmount),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+                      ),
+                      onConfirm: onBoiler250,
+                      requireHold: requireHold,
+                    )
+                  : HoldActionTile(
+                      icon: Icons.refresh_rounded,
+                      label: l10n.refillBoiler,
+                      subtitle: l10n.refillBoilerSubtitle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+                      ),
+                      onConfirm: onRefillBoiler,
+                      requireHold: false,
+                    ),
             ),
-            onConfirm: onBoiler250,
-            fullWidth: true,
-            requireHold: requireHold,
-          )
-        else
-          HoldActionTile(
-            icon: Icons.refresh_rounded,
-            label: l10n.refillBoiler,
-            subtitle: l10n.refillBoilerSubtitle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+            const SizedBox(width: 12),
+            Expanded(
+              child: HoldActionTile(
+                icon: creatineActive
+                    ? Icons.check_circle_rounded
+                    : Icons.medication_rounded,
+                label: creatineActive ? l10n.creatineTaken : l10n.creatine,
+                subtitle: creatineActive ? null : l10n.creatineTapHint,
+                gradient: LinearGradient(
+                  colors: creatineActive
+                      ? const [Color(0xFF66BB6A), Color(0xFF43A047)]
+                      : const [Color(0xFF78909C), Color(0xFF546E7A)],
+                ),
+                onConfirm: onCreatine,
+                requireHold: false,
+              ),
             ),
-            onConfirm: onRefillBoiler,
-            fullWidth: true,
-            requireHold: false,
-          ),
+          ],
+        ),
       ],
     );
   }

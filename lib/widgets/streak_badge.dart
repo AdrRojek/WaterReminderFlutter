@@ -22,95 +22,80 @@ class StreakBadge extends StatelessWidget {
         ? l10n.streakOne(info.streak)
         : l10n.streakMany(info.streak);
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: hot
-                  ? [const Color(0xFFFF6D00), const Color(0xFFFF9100)]
-                  : [
-                      Colors.white.withValues(alpha: 0.08),
-                      Colors.white.withValues(alpha: 0.04),
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: hot
-                  ? Colors.orange.withValues(alpha: 0.5)
-                  : Colors.white.withValues(alpha: 0.1),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: hot
+              ? [const Color(0xFFFF6D00), const Color(0xFFFF9100)]
+              : [
+                  Colors.white.withValues(alpha: 0.08),
+                  Colors.white.withValues(alpha: 0.04),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: hot
+              ? Colors.orange.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hot ? Icons.local_fire_department_rounded : Icons.whatshot_outlined,
+            color: hot ? Colors.white : Colors.orangeAccent,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: hot ? Colors.white : Colors.orangeAccent,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                hot
-                    ? Icons.local_fire_department_rounded
-                    : Icons.whatshot_outlined,
-                color: hot ? Colors.white : Colors.orangeAccent,
-                size: 20,
+          if (info.amnestyUsedThisMonth) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
+              child: Text(
+                l10n.amnestyUsedBadge,
+                style: const TextStyle(
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: hot ? Colors.white : Colors.orangeAccent,
+                  color: Colors.white,
                 ),
               ),
-              if (info.amnestyUsedThisMonth) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    l10n.amnestyUsedBadge,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-              if (rewards.solidSipper) ...[
-                const SizedBox(width: 8),
-                Text(
-                  l10n.rewardTitleSolidSipper,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-              if (rewards.ironBadge) ...[
-                const SizedBox(width: 6),
-                const Icon(Icons.workspace_premium_rounded,
-                    size: 16, color: Color(0xFFFFD54F)),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          info.amnestyUsedThisMonth
-              ? l10n.amnestyAutoUsed
-              : l10n.amnestyHint,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.35),
-            fontSize: 11,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+            ),
+          ],
+          if (rewards.solidSipper) ...[
+            const SizedBox(width: 8),
+            Text(
+              l10n.rewardTitleSolidSipper,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+          ],
+          if (rewards.ironBadge) ...[
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.workspace_premium_rounded,
+              size: 16,
+              color: Color(0xFFFFD54F),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

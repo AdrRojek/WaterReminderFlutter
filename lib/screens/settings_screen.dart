@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants.dart';
+import '../core/locale_resolver.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/providers.dart';
@@ -19,6 +20,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  int _resetTapCount = 0;
+  bool _showTestNotification = false;
+
   @override
   Widget build(BuildContext context) {
     final repo = ref.watch(waterRepositoryProvider);
@@ -214,6 +218,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text(l10n.resetStandardDaySubtitle),
             trailing: const Icon(Icons.refresh_rounded),
             onTap: () async {
+              setState(() {
+                _resetTapCount++;
+                if (_resetTapCount >= 5) {
+                  _showTestNotification = true;
+                }
+              });
               await repo.ensureDailySchedule(forceDefault: true);
               if (context.mounted) {
                 AppToast.show(
@@ -225,6 +235,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
+          if (_showTestNotification)
+            ListTile(
+              title: Text(l10n.testNotification),
+              subtitle: Text(l10n.testNotificationSubtitle),
+              trailing: const Icon(Icons.notification_add_rounded),
+              onTap: () async {
+                NotificationService.instance
+                    .useLocalizations(l10nForSettings(repo.settings));
+                await NotificationService.instance.scheduleTestNotification(
+                  portionMl: settings.portionMl,
+                );
+                if (context.mounted) {
+                  AppToast.show(
+                    context,
+                    l10n.toastTestNotification,
+                    tone: AppToastTone.info,
+                    icon: Icons.notification_add_rounded,
+                  );
+                }
+              },
+            ),
         ],
       ),
     );

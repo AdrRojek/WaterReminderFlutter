@@ -877,6 +877,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cosmetics you’ve earned'**
   String get openRewardsSubtitle;
+
+  /// No description provided for @creatineTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to mark'**
+  String get creatineTapHint;
+
+  /// No description provided for @testNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification (in 1 min)'**
+  String get testNotification;
+
+  /// No description provided for @testNotificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev hidden — schedules a sample reminder'**
+  String get testNotificationSubtitle;
+
+  /// No description provided for @toastTestNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification in ~1 minute'**
+  String get toastTestNotification;
+
+  /// No description provided for @notifTestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Test ping — actions: water / boiler / quiet 20 min'**
+  String get notifTestBody;
 }
 
 class _AppLocalizationsDelegate
