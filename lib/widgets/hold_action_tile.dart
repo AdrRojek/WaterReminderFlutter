@@ -91,12 +91,15 @@ class _HoldActionTileState extends State<HoldActionTile>
 
     return Material(
       color: Colors.transparent,
+      elevation: 0,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: _onTap,
         onLongPressStart: (_) => _onHoldStart(),
         onLongPressEnd: (_) => _onHoldEnd(),
         onLongPressCancel: _onHoldEnd,
-        child: Ink(
+        child: Container(
+          width: double.infinity,
           decoration: BoxDecoration(
             gradient: widget.gradient,
             borderRadius: BorderRadius.circular(18),
@@ -108,6 +111,7 @@ class _HoldActionTileState extends State<HoldActionTile>
               ),
             ],
           ),
+          clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
               if (widget.requireHold)
@@ -115,16 +119,13 @@ class _HoldActionTileState extends State<HoldActionTile>
                   child: AnimatedBuilder(
                     animation: _progress,
                     builder: (context, _) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: _progress.value,
-                            heightFactor: 1,
-                            child: ColoredBox(
-                              color: Colors.white.withValues(alpha: 0.22),
-                            ),
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: _progress.value,
+                          heightFactor: 1,
+                          child: ColoredBox(
+                            color: Colors.white.withValues(alpha: 0.22),
                           ),
                         ),
                       );
@@ -137,17 +138,12 @@ class _HoldActionTileState extends State<HoldActionTile>
                   horizontal: 16,
                 ),
                 child: Row(
-                  mainAxisAlignment: widget.fullWidth
-                      ? MainAxisAlignment.start
-                      : MainAxisAlignment.center,
                   children: [
                     Icon(widget.icon, color: Colors.white, size: 22),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: widget.fullWidth
-                            ? CrossAxisAlignment.start
-                            : CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.label,
