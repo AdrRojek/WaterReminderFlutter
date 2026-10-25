@@ -2,18 +2,33 @@
 
 Rozbudowana wersja aplikacji [WaterReminder](../WaterReminder) (Swift/iOS) w Flutterze — Android, iOS, macOS.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/home.jpg" alt="Home" width="260" />
+  &nbsp;
+  <img src="docs/screenshots/history.jpg" alt="History" width="260" />
+  &nbsp;
+  <img src="docs/screenshots/settings.jpg" alt="Settings" width="260" />
+</p>
+
+| Home | History | Settings |
+|:----:|:-------:|:--------:|
+| Progress, catch-up, quick actions | Daily log + creatine tags | Goals, language, adjust, rewards |
+
 ## Funkcje
 
 | Funkcja | Opis |
 |---------|------|
 | Cel dzienny | 4000 ml (konfigurowalne w ustawieniach) |
-| Szybkie akcje | +250 ml, +500 ml, bojler 250 ml |
+| Szybkie akcje | +250 ml, +500 ml, bojler, kreatyna |
 | Bojler | 2000 ml, śledzenie stanu |
-| Streak | Seria dni z osiągniętym celem |
-| Kreatyna | Oznaczenie dzienne (przycisk na dole) |
+| Streak | Seria dni + auto-amnestia (1×/miesiąc przy ≥50%) |
+| Kreatyna | Oznaczenie dzienne (obok bojlera) |
 | Historia | Ostatnie 14 dni |
 | Powiadomienia | 9:00–21:00 co ~50 min (jak iOS) |
 | **Nocne 2:00** | Po kliknięciu przelicza resztę dnia na równe odstępy 250 ml |
+| Nagrody | Kosmetyczne odblokowania (osobny ekran w Settings) |
 
 ## Powiadomienie nocne
 
